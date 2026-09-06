@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<!--
+  Defenkov 필드 룩 — 제안 목업 (조작 없음, 결과만)
+
+  ★ SSOT 아님. 미니 모터웨이 레퍼런스 4장을 픽셀 측정해 뽑은 값을 그대로 적용한 그림이다.
+    확정되면 기획/01시스템/05색테마.md 와 UIStyle.cs · Sub_Tile.cs · Manager_InGame.cs 로 간다.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Defenkov 필드 룩 제안</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root{
+  /* 두 극점 — 세계관 6색의 양 끝 */
+  --w:#f2f2f2; --k:#333333;
+  /* 극점 보간 */
+  --bg:#e3e3e3;      /* t=0.08 배경 */
+  --tile:#d3d3d3;    /* t=0.16 타일 — 배경과 명도차 6.3%p (레퍼런스 6.2%p) */
+  /* 6색 · 채도 60% · 명도는 밝기 사다리 */
+  --c-w:#f2f2f2; --c-y:#e8dda5; --c-g:#87d75f; --c-r:#e38e8e; --c-b:#2c85b1; --c-k:#333333;
+
+  --cell:46px;       /* 화면상 셀 */
+  --tilt:0.94;       /* 지면 압축 = sin(70°) */
+  --lift:0.34;       /* 높이 투영 = cos(70°) */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#1c1c1c;color:#ddd;
+     padding:16px 12px 40px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
+.sub{font-size:11px;color:#888;margin-bottom:18px}
+h2{font-size:12px;font-weight:800;color:#8fe0be;letter-spacing:.1em;margin:26px 0 8px}
+h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
+
+.stage{background:var(--bg);border-radius:10px;padding:24px 14px;overflow:auto;
+       display:flex;justify-content:center}
+.board{display:grid;grid-template-columns:repeat(12,var(--cell));
+       grid-auto-rows:var(--cell);gap:0;transform:scaleY(var(--tilt))}
+.board.old{gap:2px}
+
+/* 타일: 틈 0 + 점 텍스처(레퍼런스 주기 4~5px 환산) */
+.tile{background:var(--tile);position:relative;
+      background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
+      background-size:6px 6px}
+.board.old .tile{background-image:none;border-radius:2px}
+.tile.entry{background-color:#cfe0c6}
+.tile.path{background-color:#dcdcdc;background-image:none}
+
+/* 타워: 흰 받침판 + 윗면 + 앞면(높이=티어) + 넓고 부드러운 그림자 */
+.tw{position:relative;width:100%;height:100%;display:flex;align-items:flex-end;justify-content:center}
+.plate{position:absolute;left:5%;right:5%;top:6%;bottom:4%;background:#fff;border-radius:22%;
+       box-shadow:3px 5px 8px rgba(0,0,0,.14)}
+.box{position:relative;width:66%;margin-bottom:10%}
+.face{border-radius:20%;background:var(--tc)}
+.top{height:calc(var(--cell)*0.58);position:relative}
+.front{height:calc(var(--cell)*0.34*var(--lv));margin-top:-16%;
+       border-radius:0 0 20% 20%;filter:brightness(.8)}
+.tier{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:calc(var(--cell)*0.26);font-weight:800;color:var(--tl)}
+
+/* 구 버전: 조명 그라디언트 + 좁고 진한 그림자, 받침판/높이 없음 */
+.tw.old .box{width:78%;margin-bottom:11%}
+.tw.old .face{border-radius:3px}
+.tw.old .top{background:linear-gradient(150deg,rgba(255,255,255,.42) 0%,rgba(0,0,0,0) 46%),var(--tc);
+             box-shadow:2px 3px 3px rgba(0,0,0,.45)}
+.tw.old .front{display:none}
+
+/* 유닛 */
+.unit{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.roll{width:40%;aspect-ratio:1;background:var(--c-r);
+      clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+      box-shadow:2px 4px 5px rgba(0,0,0,.17)}
+.bun{position:relative;width:46%;aspect-ratio:1;
+     filter:drop-shadow(2px 4px 4px rgba(0,0,0,.17))}
+.bun i{position:absolute;background:var(--c-y);border-radius:50%}
+.bun .body{left:6%;right:6%;bottom:0;height:70%}
+.bun .head{left:24%;right:24%;top:8%;height:44%}
+.bun .ear{width:16%;height:44%;border-radius:44%;top:-22%}
+.bun .e1{left:24%;transform:rotate(-13deg)}
+.bun .e2{right:24%;transform:rotate(13deg)}
+
+/* 넥서스 */
+.nex{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+.nex i{width:72%;aspect-ratio:1;background:var(--c-k);border-radius:24%;
+       box-shadow:4px 6px 10px rgba(0,0,0,.22)}
+
+/* 팔레트 */
+.pal{display:flex;gap:6px;flex-wrap:wrap}
+.sw{flex:1;min-width:74px;border-radius:6px;overflow:hidden;background:#262626}
+.sw .n{font-size:10px;font-weight:800;color:#ccc;padding:5px 6px 0}
+.sw .t{font-size:9px;color:#999;padding:3px 6px 5px;font-family:ui-monospace,monospace}
+.sw .c{height:44px}
+
+table{width:100%;border-collapse:collapse;font-size:11px}
+td,th{padding:6px 7px;border-bottom:1px solid #2e2e2e;text-align:left;vertical-align:top}
+th{color:#8fe0be;font-size:10px;letter-spacing:.06em}
+td.n{color:#7c9;font-family:ui-monospace,monospace;white-space:nowrap}
+td.x{color:#c96}
+.note{font-size:11px;color:#8a8a8a;margin-top:8px;line-height:1.75}
+.note b{color:#ccc}
+code{font-family:ui-monospace,monospace;color:#c96}
+
+@media (max-width:860px){ :root{--cell:28px} }
+@media (max-width:470px){ :root{--cell:21px} .stage{padding:14px 6px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Defenkov 필드 룩 — 제안</h1>
+<div class="sub">미니 모터웨이 레퍼런스 4장을 픽셀 측정해 뽑은 값을 그대로 적용했습니다. 조작 없음, 결과만.</div>
+
+<h2>제안 <span>측정값 적용</span></h2>
+<div class="stage"><div class="board" id="b-new"></div></div>
+<div class="note">
+  타일 <b>틈 0</b> — 배경과 <b>명도차 6.3%</b>만으로 격자 표현(레퍼런스 6.2%) ·
+  <b>점 텍스처</b> · 타워가 <b>흰 받침판</b> 위에 · 그림자는 <b>넓고 부드럽게</b> ·
+  <b>높이로 티어</b>(1~4단) · 채도 <b>60%</b> · 플랫(면마다 밝기 같음)
+</div>
+
+<h2>현재 <span>비교용</span></h2>
+<div class="stage"><div class="board old" id="b-old"></div></div>
+<div class="note">
+  셀 <b>틈 2.7px</b>로 격자가 또렷 · 텍스처 없음 · 받침판 없음 ·
+  <b>조명 그라디언트</b>(면마다 밝기가 달라 밝기 사다리가 화면에서 깨짐) ·
+  그림자가 <b>좁고 진함</b> · 높이 표현 없음 · 채도 <b>40%</b>
+</div>
+
+<h2>6색 팔레트</h2>
+<div class="pal" id="pal-new"></div>
+<div class="note" style="margin-bottom:12px">↑ <b>제안 · 채도 60%</b> — 명도는 밝기 사다리 유지(흰→검 균등 간격)</div>
+<div class="pal" id="pal-old"></div>
+<div class="note">↑ 현재 · 채도 40%</div>
+
+<h2>적용한 측정값</h2>
+<table>
+<tr><th>항목</th><th>레퍼런스</th><th>현재</th><th>제안</th></tr>
+<tr><td>카메라 각</td><td class="n">90°</td><td class="n">70°</td><td class="n">70° 유지</td></tr>
+<tr><td>화면 점유율</td><td class="n">49%</td><td class="n">50%</td><td class="n">유지</td></tr>
+<tr><td>격자 명도차</td><td class="n">6.2%p</td><td class="n">6.3%p</td><td class="n">유지</td></tr>
+<tr><td>격자 셀 틈</td><td class="n">0</td><td class="x">2.7px</td><td class="n">0</td></tr>
+<tr><td>오브젝트 채도</td><td class="n">76~98%</td><td class="x">40%</td><td class="n">60%</td></tr>
+<tr><td>셰이딩</td><td class="n">플랫</td><td class="x">조명 받음</td><td class="n">언릿</td></tr>
+<tr><td>그림자</td><td class="n">−16%p · 넓은 블러</td><td class="x">좁고 진함</td><td class="n">−16%p</td></tr>
+<tr><td>받침판</td><td class="n">흰 라운드 판</td><td class="x">없음</td><td class="n">추가</td></tr>
+<tr><td>지형 텍스처</td><td class="n">점 · 주기 4~5px</td><td class="x">없음</td><td class="n">추가</td></tr>
+<tr><td>오브젝트 크기</td><td class="n">화면폭 3.7%</td><td class="x">4.5%</td><td class="n">3.7%</td></tr>
+</table>
+
+<div class="note">
+  <b>채도가 80%가 아니라 60%인 이유</b> — 레퍼런스는 76~98%지만 그건 <b>명도를 52~61%로 고정</b>했기 때문입니다.
+  우리는 명도가 밝기 사다리(거리·순도·색변환의 근거)에 묶여 있어서, 채도 80%를 주면 초록이 형광 <code>#5bde19</code>가 됩니다.
+  60%가 사다리를 지키면서 선명함을 얻는 자리입니다.
+  <br><br>
+  <b>90°가 아니라 70°를 유지하는 이유</b> — 지면이 6%밖에 안 눌려 격자가 사실상 정사각으로 읽히고,
+  대신 물체 높이의 34%가 보여 <b>타워 티어를 실제 높이로</b> 표현할 수 있습니다.
+  레퍼런스는 90°라 높이를 못 보여줘서 레이어를 어긋나게 겹치는 트릭을 씁니다. 우리는 트릭 없이 됩니다.
+  <br><br>
+  ⚠ 이건 <b>브라우저로 그린 근사</b>입니다. Unity의 실제 언릿 셰이딩·그림자·점 텍스처는 값이 같아도 미묘하게 다릅니다.
+  방향 판정용이고, 최종 확인은 Unity 캡처로 합니다.
+</div>
+
+</div>
+<script>
+var COLS=12, ROWS=9;
+var TOWERS={"2,1":["--c-g",1],"4,2":["--c-r",2],"7,1":["--c-b",3],
+            "3,6":["--c-y",2],"8,5":["--c-k",4],"9,7":["--c-w",1]};
+var UNITS={"1,3":"roll","5,4":"bun","6,6":"roll","10,2":"bun"};
+var PATH={};
+["0,4","1,4","2,4","3,4","4,4","5,4","6,4","7,4","8,4","9,4","10,4"].forEach(function(k){PATH[k]=1;});
+
+function build(el, isOld){
+  var h="", r, c, k;
+  for(r=0;r<ROWS;r++) for(c=0;c<COLS;c++){
+    k=c+","+r;
+    if(c===11 && r===4){ h+='<div class="tile path"><div class="nex"><i></i></div></div>'; continue; }
+    if(TOWERS[k]){
+      var col=TOWERS[k][0], lv=TOWERS[k][1];
+      var tl = (col==="--c-k") ? "#f2f2f2" : "#333333";
+      h+='<div class="tile">'
+        +'<div class="tw'+(isOld?" old":"")+'" style="--tc:var('+col+');--lv:'+lv+';--tl:'+tl+'">'
+        + (isOld?"":'<div class="plate"></div>')
+        +'<div class="box"><div class="face top"><div class="tier">'+lv+'</div></div>'
+        +'<div class="face front"></div></div></div></div>';
+      continue;
+    }
+    if(UNITS[k]){
+      var inner = (UNITS[k]==="roll") ? '<div class="roll"></div>'
+        : '<div class="bun"><i class="ear e1"></i><i class="ear e2"></i><i class="head"></i><i class="body"></i></div>';
+      h+='<div class="tile'+(PATH[k]?" path":"")+'"><div class="unit">'+inner+'</div></div>';
+      continue;
+    }
+    var cls="tile";
+    if(c===0) cls+=" entry"; else if(PATH[k]) cls+=" path";
+    h+='<div class="'+cls+'"></div>';
+  }
+  el.innerHTML=h;
+}
+build(document.getElementById("b-new"), false);
+build(document.getElementById("b-old"), true);
+
+function pal(el, set){
+  var h="", i;
+  for(i=0;i<set.length;i++){
+    h+='<div class="sw"><div class="n">'+set[i][0]+'</div><div class="t">'+set[i][1]+'</div>'
+      +'<div class="c" style="background:'+set[i][1]+'"></div></div>';
+  }
+  el.innerHTML=h;
+}
+pal(document.getElementById("pal-new"),
+  [["흰","#f2f2f2"],["노","#e8dda5"],["초","#87d75f"],["빨","#e38e8e"],["파","#2c85b1"],["검","#333333"]]);
+pal(document.getElementById("pal-old"),
+  [["흰","#f2f2f2"],["노","#e3ddbe"],["초","#a4cf8f"],["빨","#d29595"],["파","#4684a3"],["검","#333333"]]);
+</script>
+</body>
+</html>
