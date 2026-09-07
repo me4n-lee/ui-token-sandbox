@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<!--
+  Defenkov 필드 룩 — 제안 v3 (조작 없음)
+
+  ★ SSOT 아님. 레퍼런스에서 가져오는 것은 "질감 규칙"이고 "구성"은 우리 것이다.
+    v2 실패 원인: 미니 모터웨이는 도시 지도라 지형 조각·도로망이 화면을 채운다.
+    우리는 12×9 격자 아레나 → 그 구성을 베끼면 얼룩이 된다. 걷어냈다.
+    확정되면 기획/01시스템/05색테마.md → UIStyle.cs · Sub_Tile.cs · Manager_InGame.cs
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Defenkov 필드 룩 제안 v3</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root{
+  /* 6색 · 채도 60% — 오브젝트 */
+  --o-w:#f2f2f2; --o-y:#e8dda5; --o-g:#87d75f; --o-r:#e38e8e; --o-b:#2c85b1; --o-k:#333333;
+  /* 같은 색상 저채도 22% — 구역 지형 */
+  --t-g:#b4cba8;
+  --cell:48px;
+  --tilt:0.94;   /* sin70 지면 압축 */
+  --lift:0.342;  /* cos70 높이 투영 */
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#1c1c1c;color:#ddd;
+     padding:16px 12px 40px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
+.sub{font-size:11px;color:#888;margin-bottom:14px}
+h2{font-size:12px;font-weight:800;color:#8fe0be;letter-spacing:.1em;margin:24px 0 8px}
+h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
+.ask{background:#26302c;border-left:3px solid #8fe0be;padding:11px 13px;border-radius:0 6px 6px 0;
+     font-size:12px;line-height:1.9;margin-bottom:6px}
+.ask b{color:#8fe0be}
+
+/* ══ 무대 — 구역 하나, 색 하나 ══ */
+.stage{border-radius:10px;overflow:auto;display:flex;justify-content:center;padding:22px 16px;
+       background:#d8e2d2}                       /* 보드 밖 여백: 지형보다 살짝 밝게 */
+.field{position:relative;flex:none;
+       width:calc(var(--cell)*12);height:calc(var(--cell)*9*var(--tilt));
+       background:var(--t-g);border-radius:6px;
+       background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
+       background-size:6px 6px}
+
+/* 격자: 틈 0 · 배경과 명도차 6%인 선 하나만 */
+.grid{position:absolute;inset:0;border-radius:6px;
+      background-image:linear-gradient(to right, rgba(0,0,0,.05) 1px, transparent 1px),
+                       linear-gradient(to bottom, rgba(0,0,0,.05) 1px, transparent 1px);
+      background-size:var(--cell) calc(var(--cell)*var(--tilt))}
+
+/* 유닛이 걷는 칸 — 파이프가 아니라 아주 연한 밝은 틴트 */
+.walk{position:absolute;background:rgba(255,255,255,.28)}
+/* 진입 열 */
+.entry{position:absolute;left:0;top:0;bottom:0;width:calc(100%/12);
+       background:rgba(255,255,255,.16);border-radius:6px 0 0 6px}
+
+/* ══ 타워: 흰 받침판 + 윗면 + 앞면(높이=티어) ══ */
+.obj{position:absolute}
+.plate{position:absolute;inset:6%;background:#fff;border-radius:26%;
+       box-shadow:3px 6px 9px rgba(0,0,0,.16)}
+.box{position:absolute;left:16%;right:16%;bottom:18%}
+.top{height:calc(var(--cell)*0.72*var(--tilt));background:var(--tc);border-radius:24%;
+     position:relative;z-index:2}
+.front{height:calc(var(--cell)*var(--fh));background:var(--tc);filter:brightness(.76);
+       border-radius:0 0 24% 24%;margin-top:calc(var(--cell)*-0.14);position:relative;z-index:1}
+.tier{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      font-size:calc(var(--cell)*0.30);font-weight:800;color:var(--tl)}
+.nex .plate{border-radius:50%}
+.nex .top{border-radius:50%}
+.nex .front{border-radius:0 0 50% 50%}
+
+/* ══ 유닛 ══ */
+.roll{position:absolute;background:var(--o-r);
+      clip-path:polygon(50% 0,93% 25%,93% 75%,50% 100%,7% 75%,7% 25%);
+      filter:drop-shadow(2px 4px 5px rgba(0,0,0,.22))}
+.bun{position:absolute;filter:drop-shadow(2px 4px 5px rgba(0,0,0,.22))}
+.bun i{position:absolute;background:var(--o-y);border-radius:50%}
+.bun .body{left:4%;right:4%;bottom:0;height:64%}
+.bun .head{left:20%;right:20%;top:8%;height:44%}
+.bun .ear{width:16%;height:44%;border-radius:44%;top:-22%}
+.bun .e1{left:20%;transform:rotate(-14deg)}
+.bun .e2{right:20%;transform:rotate(14deg)}
+
+/* ══ 현재 (비교) ══ */
+.old.stage{background:#e9e9e9}
+.old .field{background:#d3d3d3;background-image:none}
+.old .grid{background-image:linear-gradient(to right,#e3e3e3 2.7px,transparent 2.7px),
+                            linear-gradient(to bottom,#e3e3e3 2.7px,transparent 2.7px)}
+.old .plate{display:none}
+.old .front{display:none}
+.old .walk,.old .entry{background:rgba(255,255,255,.18)}
+.old .top{border-radius:3px;
+          background:linear-gradient(150deg,rgba(255,255,255,.45) 0%,rgba(0,0,0,0) 46%),var(--tc);
+          box-shadow:2px 3px 3px rgba(0,0,0,.45)}
+
+.pal{display:flex;gap:5px;flex-wrap:wrap}
+.sw{flex:1;min-width:70px;border-radius:6px;overflow:hidden;background:#262626}
+.sw .n{font-size:10px;font-weight:800;color:#ccc;padding:5px 6px 0}
+.sw .t{font-size:9px;color:#999;padding:2px 6px 5px;font-family:ui-monospace,monospace}
+.sw .c{height:40px}
+.note{font-size:11px;color:#8a8a8a;margin-top:8px;line-height:1.75}
+.note b{color:#ccc}
+code{font-family:ui-monospace,monospace;color:#c96}
+@media (max-width:860px){ :root{--cell:30px} }
+@media (max-width:470px){ :root{--cell:23px} .stage{padding:12px 8px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Defenkov 필드 룩 — 제안 v3</h1>
+<div class="sub">초록 구역. 지형 조각·도로망을 걷어내고 아레나 구성으로.</div>
+
+<div class="ask">
+  <b>v2에서 걷어낸 것 —</b><br>
+  ✕ 지형 blob (모래·물·짙은 초록 조각) → 구역은 <b>한 색</b><br>
+  ✕ 파이프 같은 흰 도로망 → 유닛 걷는 칸을 <b>연한 틴트</b>로만<br>
+  ○ 지형 색 · 타워 박스 · 흰 받침판 · 그림자 · 점 텍스처는 <b>유지</b>
+</div>
+
+<h2>제안 <span>초록 구역</span></h2>
+<div class="stage"><div class="field" id="f-new"></div></div>
+<div class="note">
+  구역 = <b>한 색</b>(저채도) + 점 텍스처 · 격자는 틈 0 + <b>명도차 6%</b> 선 ·
+  타워는 <b>흰 받침판</b> 위 박스, 앞면 높이로 티어(1→4) · 그림자 넓고 부드럽게 ·
+  유닛 경로는 <b>연한 흰 틴트</b>
+</div>
+
+<h2>현재 <span>비교용</span></h2>
+<div class="stage old"><div class="field" id="f-old"></div></div>
+<div class="note">
+  무채색 지형 · 셀 틈 2.7px · 텍스처·받침판 없음 · <b>조명 그라디언트</b> ·
+  좁고 진한 그림자 · 높이 없음 · 채도 40%
+</div>
+
+<h2>팔레트 — 한 색상을 두 채도로</h2>
+<div class="pal" id="pal-o"></div>
+<div class="note" style="margin-bottom:10px">↑ <b>오브젝트</b> 채도 60% — 타워·유닛</div>
+<div class="pal" id="pal-t"></div>
+<div class="note">↑ <b>지형</b> 채도 22% — 구역 바닥. 흰 구역이면 첫 칸, 검 구역이면 마지막 칸이 바닥이 된다</div>
+
+<div class="note" style="margin-top:20px">
+  <b>v2가 엉망이었던 이유</b> — 레퍼런스의 <b>구성</b>까지 베꼈습니다.
+  미니 모터웨이는 도시 지도라 지형 조각이 여럿이고 도로망이 화면을 채웁니다.
+  우리는 12×9 격자 아레나라 거기에 blob과 파이프를 얹으면 얼룩이 됩니다.
+  <br><br>
+  가져올 것은 <b>질감 규칙</b>뿐입니다 — 지형 저채도 / 오브젝트 고채도 · 흰 받침판 ·
+  넓고 부드러운 그림자 · 틈 0 격자 · 점 텍스처 · 큰 라운딩. <b>구성은 우리 것</b>입니다.
+  <br><br>
+  ⚠ 브라우저 근사. Unity는 실제 큐브 메시라 입체감이 다릅니다. 여기선 <b>색·비율·구성</b>만 봐주세요.
+</div>
+
+</div>
+<script>
+var COLS=12, ROWS=9, TILT=0.94, LIFT=0.342;
+var TOWERS=[[2,1,"--o-g",1],[4,2,"--o-r",2],[7,1,"--o-b",3],[3,6,"--o-y",2],[8,5,"--o-k",4],[9,7,"--o-w",1]];
+var UNITS=[[1,4,"roll"],[5,4,"bun"],[6,4,"roll"],[9,4,"bun"]];
+// 유닛이 걷는 칸 (진입 → 넥서스). 파이프가 아니라 칸 단위 틴트.
+var WALK=[[1,4],[2,4],[3,4],[4,4],[5,4],[6,4],[7,4],[8,4],[9,4],[10,4]];
+
+function build(el, isOld){
+  var cw=100/COLS, ch=100/ROWS, h="", i;
+  h+='<div class="entry"></div>';
+  for(i=0;i<WALK.length;i++){
+    h+='<div class="walk" style="left:'+(WALK[i][0]*cw)+'%;top:'+(WALK[i][1]*ch)+'%;width:'+cw+'%;height:'+ch+'%"></div>';
+  }
+  h+='<div class="grid"></div>';
+
+  for(i=0;i<TOWERS.length;i++){
+    var t=TOWERS[i], col=t[2], lv=t[3];
+    var wh = 0.4 + 0.3*(lv-1);
+    var fh = (wh*LIFT).toFixed(3);
+    var tl = (col==="--o-k") ? "#f2f2f2" : "#333333";
+    h+='<div class="obj" style="left:'+(t[0]*cw)+'%;top:'+(t[1]*ch)+'%;width:'+cw+'%;height:'+ch+'%">'
+      +'<div class="plate"></div>'
+      +'<div class="box" style="--tc:var('+col+');--fh:'+fh+';--tl:'+tl+'">'
+      +'<div class="top"><div class="tier">'+lv+'</div></div><div class="front"></div>'
+      +'</div></div>';
+  }
+  h+='<div class="obj nex" style="left:'+(11*cw)+'%;top:'+(4*ch)+'%;width:'+cw+'%;height:'+ch+'%">'
+    +'<div class="plate"></div>'
+    +'<div class="box" style="--tc:var(--o-k);--fh:'+(1.2*LIFT).toFixed(3)+';--tl:#f2f2f2">'
+    +'<div class="top"></div><div class="front"></div></div></div>';
+
+  for(i=0;i<UNITS.length;i++){
+    var u=UNITS[i];
+    var st='left:'+(u[0]*cw + cw*0.27)+'%;top:'+(u[1]*ch + ch*0.24)+'%;width:'+(cw*0.46)+'%;height:'+(ch*0.46)+'%';
+    if(u[2]==="roll") h+='<div class="roll" style="'+st+'"></div>';
+    else h+='<div class="bun" style="'+st+'"><i class="ear e1"></i><i class="ear e2"></i><i class="head"></i><i class="body"></i></div>';
+  }
+  el.innerHTML=h;
+}
+build(document.getElementById("f-new"), false);
+build(document.getElementById("f-old"), true);
+
+function pal(el,set){
+  var h="",i;
+  for(i=0;i<set.length;i++){
+    h+='<div class="sw"><div class="n">'+set[i][0]+'</div><div class="t">'+set[i][1]+'</div>'
+      +'<div class="c" style="background:'+set[i][1]+'"></div></div>';
+  }
+  el.innerHTML=h;
+}
+pal(document.getElementById("pal-o"),
+  [["흰","#f2f2f2"],["노","#e8dda5"],["초","#87d75f"],["빨","#e38e8e"],["파","#2c85b1"],["검","#333333"]]);
+pal(document.getElementById("pal-t"),
+  [["흰","#eeeeee"],["노","#ddd8c2"],["초","#b4cba8"],["빨","#d3bcbc"],["파","#8fa8b4"],["검","#4a4a4a"]]);
+</script>
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<!--
+  Defenkov 유닛 형태 후보 — 일본풍 미니멀
+
+  ★ SSOT 아님. 형태 언어를 고르기 위한 후보 시트.
+    제약 둘: (1) Unity 프리미티브(구·캡슐·실린더·큐브) 또는 절차적 다면체로 조립 가능
+             (2) 화면 실측 16×26px에서 실루엣이 읽혀야 한다
+    확정되면 기획/01시스템/05색테마.md §형태 언어 → Manager_Unit.cs
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex,nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Defenkov 유닛 형태 후보</title>
+<link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
+<style>
+:root{
+  --o-w:#f2f2f2; --o-y:#e8dda5; --o-g:#87d75f; --o-r:#e38e8e; --o-b:#2c85b1; --o-k:#333333;
+  --t-g:#b4cba8;
+  --ink:#3a3a3a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#1c1c1c;color:#ddd;
+     padding:16px 12px 48px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:1000px;margin:0 auto}
+h1{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
+.sub{font-size:11px;color:#888;margin-bottom:14px}
+h2{font-size:12px;font-weight:800;color:#8fe0be;letter-spacing:.1em;margin:26px 0 10px}
+h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
+.ask{background:#26302c;border-left:3px solid #8fe0be;padding:11px 13px;border-radius:0 6px 6px 0;
+     font-size:12px;line-height:1.9;margin-bottom:6px}
+.ask b{color:#8fe0be}
+
+/* ══ 후보 카드 ══ */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+.card{background:#262626;border-radius:8px;overflow:hidden}
+.big{height:118px;background:var(--t-g);display:flex;align-items:flex-end;justify-content:center;
+     padding-bottom:14px;
+     background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
+     background-size:6px 6px}
+.meta{padding:8px 9px 10px}
+.nm{font-size:12px;font-weight:800;color:#fff}
+.jp{font-size:9px;color:#7c9;font-weight:600;margin-bottom:5px}
+.rc{font-size:10px;color:#9a9a9a;line-height:1.6}
+.rc b{color:#c8c8c8}
+.mv{font-size:9px;color:#c96;margin-top:4px;font-weight:700}
+
+/* ══ 실제 크기 줄 ══ */
+.reals{background:var(--t-g);border-radius:8px;padding:20px 10px;
+       background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
+       background-size:6px 6px;
+       display:flex;flex-wrap:wrap;gap:22px;align-items:flex-end;justify-content:center}
+.realbox{width:34px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.realbox .lbl{font-size:8px;color:#40503f;font-weight:800;white-space:nowrap}
+.slot{width:16px;height:26px;display:flex;align-items:flex-end;justify-content:center}
+
+/* ══ 공통 부품 ══ */
+.u{position:relative;filter:drop-shadow(1.5px 3px 3px rgba(0,0,0,.22))}
+.u i{position:absolute;border-radius:50%}
+.u .eye{background:var(--ink);border-radius:50%;width:11%;height:8%}
+.tri{position:absolute;clip-path:polygon(50% 0,100% 100%,0 100%)}
+.itri{position:absolute;clip-path:polygon(0 0,100% 0,50% 100%)}
+
+/* ── 1 경단 3단 ── */
+.dango i{background:var(--c)}
+.dango .b1{left:0;right:0;bottom:0;height:38%}
+.dango .b2{left:7%;right:7%;bottom:31%;height:36%}
+.dango .b3{left:15%;right:15%;bottom:62%;height:34%}
+/* ── 2 토끼 ── */
+.usagi i{background:var(--c)}
+.usagi .body{left:2%;right:2%;bottom:0;height:62%}
+.usagi .head{left:19%;right:19%;top:12%;height:44%}
+.usagi .ear{width:15%;height:44%;border-radius:44%;top:-20%}
+.usagi .e1{left:22%;transform:rotate(-15deg)}
+.usagi .e2{right:22%;transform:rotate(15deg)}
+/* ── 3 다루마 ── */
+.daruma i{background:var(--c)}
+.daruma .body{left:0;right:0;bottom:0;height:66%}
+.daruma .head{left:20%;right:20%;top:2%;height:40%}
+/* ── 4 고양이 ── */
+.neko i{background:var(--c)}
+.neko .body{left:3%;right:3%;bottom:0;height:70%}
+.neko .ear{background:var(--c);width:26%;height:30%;top:2%}
+.neko .a1{left:8%}
+.neko .a2{right:8%}
+/* ── 5 오니기리 ── */
+.onigiri .tri{background:var(--c);left:0;right:0;top:0;bottom:0;border-radius:14%}
+.onigiri .nori{position:absolute;left:14%;right:14%;bottom:6%;height:26%;background:var(--ink);
+               border-radius:12%;opacity:.85}
+/* ── 6 문어 ── */
+.tako i{background:var(--c)}
+.tako .dome{left:0;right:0;top:0;height:66%;border-radius:50% 50% 34% 34%}
+.tako .leg{width:20%;height:34%;bottom:0;border-radius:0 0 50% 50%}
+.tako .l1{left:2%} .tako .l2{left:40%} .tako .l3{right:2%}
+/* ── 7 팽이 ── */
+.koma .itri{background:var(--c);left:4%;right:4%;top:24%;bottom:0}
+.koma i{background:var(--c)}
+.koma .cap{left:14%;right:14%;top:2%;height:34%}
+/* ── 8 개구리 ── */
+.kaeru i{background:var(--c)}
+.kaeru .body{left:0;right:0;bottom:0;height:62%;border-radius:50%}
+.kaeru .bump{width:32%;height:34%;top:8%}
+.kaeru .p1{left:8%} .kaeru .p2{right:8%}
+
+.note{font-size:11px;color:#8a8a8a;margin-top:10px;line-height:1.8}
+.note b{color:#ccc}
+table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px}
+td,th{padding:6px 7px;border-bottom:1px solid #2e2e2e;text-align:left;vertical-align:top}
+th{color:#8fe0be;font-size:10px;letter-spacing:.06em}
+td.g{color:#7c9} td.x{color:#c96}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Defenkov 유닛 형태 후보 — 일본풍 미니멀</h1>
+<div class="sub">전부 Unity 프리미티브(구·캡슐·실린더) 또는 절차적 다면체로 조립 가능한 것만.</div>
+
+<div class="ask">
+  <b>봐주실 것 —</b><br>
+  ① 확대 뷰에서 <b>마음에 드는 것 2~3개</b><br>
+  ② 그게 <b>실제 크기 줄</b>에서도 구분되는가<br>
+  ③ 굴러갈 것 / 뛸 것을 <b>다르게</b> 줄지, 하나로 통일할지
+</div>
+
+<h2>후보 <span>확대 · 셀 크기의 약 2.5배</span></h2>
+<div class="cards" id="cards"></div>
+
+<h2>실제 크기 <span>화면 16 × 26px — 이게 진짜입니다</span></h2>
+<div class="reals" id="reals"></div>
+<div class="note">
+  16px에서는 <b>실루엣만</b> 남습니다. 눈·무늬는 사라집니다.
+  그래서 판정 기준은 "귀엽나"가 아니라 <b>"옆의 것과 구분되나"</b>입니다.
+</div>
+
+<h2>프리미티브 구성 · 이동</h2>
+<table id="tbl"></table>
+
+<div class="note">
+  <b>이동 방식이 형태를 정합니다</b> — 굴러갈 것은 회전축이 있어야 하고(경단·다루마·팽이),
+  뛸 것은 착지 스쿼시가 읽혀야 합니다(토끼·개구리). 문어·오니기리는 미끄러지는 쪽입니다.
+  <br><br>
+  <b>16px에서 가장 잘 구분되는 것</b>은 실루엣이 비대칭인 것입니다 — 토끼(귀 2개)·고양이(귀 2개)·팽이(역삼각).
+  경단·다루마·개구리는 둥근 덩어리라 서로 헷갈릴 수 있습니다.
+  <br><br>
+  ⚠ CSS 근사입니다. Unity에선 실제 3D라 명암·그림자가 붙어 실루엣이 더 또렷합니다.
+</div>
+
+</div>
+<script>
+var COLORS=["--o-r","--o-y","--o-g","--o-b","--o-w","--o-r","--o-y","--o-g"];
+var U=[
+ {id:"dango", nm:"경단 3단", jp:"だんご", cls:"dango",
+  html:'<i class="b1"></i><i class="b2"></i><i class="b3"></i>',
+  rc:"구 3개 (0.26 / 0.22 / 0.18) 수직 적층",
+  mv:"굴림 — 3단이 넘어가며 덜컹", read:"△ 둥근 덩어리 계열과 혼동"},
+ {id:"usagi", nm:"토끼", jp:"うさぎ", cls:"usagi",
+  html:'<i class="ear e1"></i><i class="ear e2"></i><i class="head"></i><i class="body"></i>',
+  rc:"구 2개 + 캡슐 2개(귀 0.08×0.22)",
+  mv:"홉 — 포물선 + 착지 스쿼시 + 귀 관성", read:"○ 귀 2개로 즉시 구분"},
+ {id:"daruma", nm:"다루마", jp:"だるま", cls:"daruma",
+  html:'<i class="body"></i><i class="head"></i><i class="eye" style="left:31%;top:16%"></i><i class="eye" style="right:31%;top:16%"></i>',
+  rc:"구 2개 (0.30 / 0.19). 무게중심 하단",
+  mv:"흔들림 — 밀리면 좌우로 진동", read:"△ 경단과 혼동"},
+ {id:"neko", nm:"고양이", jp:"ねこ", cls:"neko",
+  html:'<div class="tri ear a1"></div><div class="tri ear a2"></div><i class="body"></i>',
+  rc:"구 1개 + 절차적 원뿔 2개(귀)",
+  mv:"홉 또는 미끄러짐", read:"○ 뾰족 귀로 구분"},
+ {id:"onigiri", nm:"오니기리", jp:"おにぎり", cls:"onigiri",
+  html:'<div class="tri"></div><div class="nori"></div>',
+  rc:"절차적 라운드 삼각기둥 + 띠",
+  mv:"미끄러짐 — 회전 없음", read:"○ 삼각 실루엣"},
+ {id:"tako", nm:"문어", jp:"たこ", cls:"tako",
+  html:'<i class="dome"></i><i class="leg l1"></i><i class="leg l2"></i><i class="leg l3"></i>',
+  rc:"반구 1개 + 캡슐 3개(다리)",
+  mv:"미끄러짐 + 다리 흔들림", read:"△ 다리가 16px에서 뭉침"},
+ {id:"koma", nm:"팽이", jp:"こま", cls:"koma",
+  html:'<div class="itri"></div><i class="cap"></i>',
+  rc:"절차적 원뿔(역방향) + 구 1개",
+  mv:"스핀 — 제자리 회전하며 이동", read:"○ 역삼각으로 즉시 구분"},
+ {id:"kaeru", nm:"개구리", jp:"かえる", cls:"kaeru",
+  html:'<i class="bump p1"></i><i class="bump p2"></i><i class="body"></i>',
+  rc:"납작 구 1개 + 구 2개(눈두덩)",
+  mv:"홉 — 큰 포물선 + 강한 스쿼시", read:"△ 폭이 넓어 존재감은 크지만 혼동"}
+];
+
+function shape(u, col, size){
+  return '<div class="u '+u.cls+'" style="--c:var('+col+');width:'+size+'px;height:'+Math.round(size*1.15)+'px">'+u.html+'</div>';
+}
+var h="";
+for (var i=0;i<U.length;i++){
+  h+='<div class="card"><div class="big">'+shape(U[i],COLORS[i],72)+'</div>'
+    +'<div class="meta"><div class="nm">'+U[i].nm+'</div><div class="jp">'+U[i].jp+'</div>'
+    +'<div class="rc">'+U[i].rc+'</div><div class="mv">'+U[i].mv+'</div></div></div>';
+}
+document.getElementById("cards").innerHTML=h;
+
+h="";
+for (i=0;i<U.length;i++){
+  h+='<div class="realbox"><div class="slot">'+shape(U[i],COLORS[i],16)+'</div>'
+    +'<div class="lbl">'+U[i].nm+'</div></div>';
+}
+document.getElementById("reals").innerHTML=h;
+
+h='<tr><th>후보</th><th>프리미티브 구성</th><th>이동</th><th>16px 판독</th></tr>';
+for (i=0;i<U.length;i++){
+  var cl = (U[i].read.charAt(0)==="○") ? "g" : "x";
+  h+='<tr><td><b>'+U[i].nm+'</b></td><td>'+U[i].rc+'</td><td>'+U[i].mv+'</td><td class="'+cl+'">'+U[i].read+'</td></tr>';
+}
+document.getElementById("tbl").innerHTML=h;
+</script>
+</body>
+</html>
