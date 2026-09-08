@@ -17,7 +17,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v11</title>
+<title>Defenkov 필드 · 형태 v12</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -117,13 +117,17 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .item .lb{font-size:9px;font-weight:800;color:var(--lbc)}
 .cb{width:var(--cell);height:var(--cell);position:relative}
 
-.angs{display:grid;grid-template-columns:1fr;gap:10px}
-@media (min-width:900px){ .angs{grid-template-columns:repeat(3,1fr)} }
-.ac{border-radius:9px;overflow:hidden;background:#242424}
-.ac .head{font-size:11px;font-weight:800;padding:8px 10px 7px;color:#ddd}
-.ac .head i{font-style:normal;font-size:9px;color:#888;font-weight:600;margin-left:5px}
-.ac .body{display:flex;align-items:center;justify-content:center;padding:6px;overflow:hidden}
-.acrow{display:flex;gap:14px;align-items:center;justify-content:center;padding:10px 6px 12px;background:var(--zone)}
+/* 각도 비교 — 세로로 쌓고 본 무대와 같은 크기로 */
+.angs{display:flex;flex-direction:column;gap:14px}
+.ac{border-radius:10px;overflow:hidden;background:#242424}
+.ac .head{font-size:13px;font-weight:800;padding:10px 12px 9px;color:#fff}
+.ac .head i{font-style:normal;font-size:10px;color:#8fe0be;font-weight:700;margin-left:8px}
+.ac .body{display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto}
+.acrow{display:flex;gap:26px;align-items:center;justify-content:center;
+       padding:18px 10px 20px;background:var(--zone);flex-wrap:wrap}
+.acrow .tag{position:absolute;left:0;right:0;bottom:-16px;text-align:center;
+            font-size:10px;font-weight:800;color:var(--lbc2)}
+.acw{position:relative;margin-bottom:18px}
 
 .zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .zc{border-radius:9px;overflow:hidden;background:#242424}
@@ -144,11 +148,11 @@ td.s{color:#9ab;width:34%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v11</h1>
+<h1>Defenkov 필드 · 형태 — v12</h1>
 <div class="sub">90° 수직 탑뷰 · 깊이는 그림자로만 · 티어는 판 적층 · 평소/건설 두 상태</div>
 
 <div class="q">
-  <b>v11 — 각도 비교(90°/85°/80°) 추가</b><br><span style="color:#888">v10: 건물 80% · 지형색 파스텔 · 외곽선</span><br>
+  <b>v12 — 각도 비교를 크게 (세로 배치 · 근접 뷰 96px)</b><br><span style="color:#888">v10: 건물 80% · 지형색 파스텔 · 외곽선</span><br>
   ① <b>70° → 90° 수직 탑뷰.</b> 애매한 각도를 버렸습니다. 깊이는 <b>그림자로만</b><br>
   ② 티어를 높이 대신 <b>판 적층</b>(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로<br>
   ③ 평소: <b>3칸 간격 옅은 실선</b>만<br>
@@ -183,7 +187,7 @@ td.s{color:#9ab;width:34%}
   달라지는 건 <b>앞면(높이)</b>뿐입니다. 셀 40px 기준 앞면 두께:
   <br>90° <b>0px</b> · 85° T1 2.4px / T4 5.1px · 80° T1 4.9px / T4 <b>10.1px</b>
   <br>즉 <b>90°의 깔끔함을 거의 유지하면서 티어를 높이로 읽게</b> 만들 수 있습니다.
-  아래 줄은 같은 각도의 T1~T4 근접 뷰입니다.
+  각 블록의 아래 줄은 <b>T1~T4 근접 뷰</b>(셀 96px)입니다 — 앞면이 티어에 따라 자라는 게 보입니다.
 </div>
 
 <h2>6구역 <span>지형만 그 구역 색</span></h2>
@@ -375,14 +379,17 @@ document.getElementById("s-build").innerHTML = buildArena(GREEN, true);
 
 /* 각도 비교 — 90 / 85 / 80 */
 (function(){
-  var A=[[90,"앞면 없음"],[85,"앞면 2.4~5.1px"],[80,"앞면 4.9~10.1px"]];
+  var A=[[90,"완전 평면 — 앞면 0px · 지면 압축 0%"],
+         [85,"앞면 2.4~5.1px · 지면 압축 0.4%"],
+         [80,"앞면 4.9~10.1px · 지면 압축 1.5%"]];
   var h="", i, j;
   for(i=0;i<A.length;i++){
     h+='<div class="ac"><div class="head">'+A[i][0]+'°<i>'+A[i][1]+'</i></div>'
-      +'<div class="body">'+buildArena(GREEN,false,"11px",A[i][0])+'</div>'
-      +'<div class="acrow" style="--zone:'+GREEN.zone+';--ring:'+GREEN.ring+'">';
+      +'<div class="body">'+buildArena(GREEN,false,null,A[i][0])+'</div>'
+      +'<div class="acrow" style="--zone:'+GREEN.zone+';--ring:'+GREEN.ring+';--lbc2:'+GREEN.lb+'">';
     for(j=1;j<=4;j++)
-      h+='<div class="cb" style="--cell:44px">'+towerInner("--o-g",j,A[i][0])+'</div>';
+      h+='<div class="acw"><div class="cb" style="--cell:96px">'+towerInner("--o-g",j,A[i][0])
+        +'</div><div class="tag">T'+j+'</div></div>';
     h+='</div></div>';
   }
   document.getElementById("angs").innerHTML=h;
