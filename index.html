@@ -1,38 +1,34 @@
 <!DOCTYPE html>
 <!--
-  Defenkov 필드 · 형태 — v4
+  Defenkov 필드 · 형태 — v8 (90° 탑뷰 전면 재작성)
 
-  근거: 기획/01시스템/06형태언어.md (세계관 도출) + 05색테마.md (색·측정값)
+  근거: 기획/01시스템/06형태언어.md · 05색테마.md · 00세계관/05용어사전.md §2.0
   ⛔ 레거시 목업(_공유/ui-mockup·lobby-mockup)에서 아무것도 가져오지 않았다.
 
-  v4에서 고친 것
-   1. 타워를 정육면체/직육면체로 — 티어 = 높이. (v3의 어긋난 층은 받침판을 삐져나가는 버그였고,
-      "조잡"을 기하학적 어긋남으로 읽은 것도 과했다. 깡통은 깔끔한 형태다)
-   2. 타워·유닛에 은은한 아우라 — 빛이 재료이므로
-   3. 건설 상태 / 평소 상태를 분리해 둘 다 보여준다 (미니 모터웨이 호버 방식)
-   4. 길은 그리지 않고 BFS 길찾기로 계산해 미니 모터웨이 도로로 렌더
-   5. 유닛을 불규칙 다면체 → 구 + 아우라로
-   6. 6구역(흰·노·초·빨·파·검) 전부
+  v8에서 바뀐 것
+   1. 70° → 90° 수직 탑뷰. 깊이는 그림자로만
+   2. 티어를 높이 대신 판 적층(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로
+   3. 평소: 3칸 간격 옅은 실선만
+   4. 건설 중: 셀 단위 실선 격자 + 보드 밖 대각 해치 + 경로를 막는 칸 해치 + 전체 옅어짐
+   5. 보드(12×9) 밖 여백을 실제로 그림 — 화면 점유율 50%
 -->
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v7</title>
+<title>Defenkov 필드 · 형태 v8</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
-  /* 오브젝트 6색 — 각 색이 자기 자연 명도를 쓴다. 균등 간격은 포기, 사다리 순서는 유지.
-     휘도 흰0.888 > 노0.612 > 초0.344 > 빨0.204 > 파0.172 > 검0.033 */
+  /* 6색 — 용어사전 §2.0 확정 (자연 명도, 사다리 순서 유지) */
   --o-w:#f2f2f2; --o-y:#edcb45; --o-g:#59b238; --o-r:#db4a43; --o-b:#2875c3; --o-k:#333333;
-  --cell:52px; --tilt:0.94; --lift:0.342;
-  --grid:0.05;       /* 평소 격자 알파 */
+  --cell:40px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#191919;color:#ddd;
      padding:16px 12px 48px;line-height:1.5;-webkit-text-size-adjust:100%}
-.wrap{max-width:1020px;margin:0 auto}
+.wrap{max-width:1060px;margin:0 auto}
 h1{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
 .sub{font-size:11px;color:#888;margin-bottom:14px}
 h2{font-size:12px;font-weight:800;color:#8fe0be;letter-spacing:.1em;margin:26px 0 9px}
@@ -42,459 +38,364 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .q b{color:#8fe0be}
 
 /* ══ 무대 ══ */
-.stage{border-radius:10px;overflow:auto;display:flex;justify-content:center;padding:20px 14px;
-       background:var(--pad)}
-.field{position:relative;flex:none;
-       width:calc(var(--cell)*12);height:calc(var(--cell)*9*var(--tilt));
-       background:var(--zone);border-radius:6px;
-       background-image:none}
-/* 격자는 평소 아예 없다. 건설 중에만 나타난다 (미니 모터웨이 방식).
-   선이 아니라 셀 교차점의 점 — 선을 그으면 화면이 갈라져 보인다 */
-.grid{display:none}
-.grid.on{display:block;position:absolute;inset:0;border-radius:6px;
-      background-image:radial-gradient(circle, rgba(0,0,0,.30) 1.3px, transparent 1.4px);
-      background-size:var(--cell) calc(var(--cell)*var(--tilt));
-      background-position:calc(var(--cell)*-0.5) calc(var(--cell)*var(--tilt)*-0.5)}
+.stage{border-radius:10px;overflow:auto;display:flex;justify-content:center;padding:14px}
+.arena{position:relative;flex:none;background:var(--zone);border-radius:6px;overflow:hidden}
+.board{position:absolute}
 
-/* ── 도로: 길찾기 결과를 흰 굵은 선 + 회색 케이싱으로 ── */
+/* 평소 격자 — 3칸마다 옅은 실선 */
+.g-idle{position:absolute;inset:0;
+  background-image:linear-gradient(to right, rgba(0,0,0,.055) 1px, transparent 1px),
+                   linear-gradient(to bottom, rgba(0,0,0,.055) 1px, transparent 1px);
+  background-size:calc(var(--cell)*3) calc(var(--cell)*3)}
+
+/* 건설 중 격자 — 셀 단위 실선 */
+.g-build{position:absolute;inset:0;
+  background-image:linear-gradient(to right, rgba(0,0,0,.14) 1px, transparent 1px),
+                   linear-gradient(to bottom, rgba(0,0,0,.14) 1px, transparent 1px);
+  background-size:var(--cell) var(--cell);
+  box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+
+/* 대각 해치 = 지을 수 없는 곳 */
+.hatch{position:absolute;
+  background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.085) 0 3px, transparent 3px 8px)}
+.hatch.bad{
+  background-image:repeating-linear-gradient(45deg, rgba(190,50,50,.22) 0 3px, transparent 3px 8px)}
+
+/* 건설 중엔 화면이 옅어진다 */
+.dim{position:absolute;inset:0;background:rgba(255,255,255,.28);pointer-events:none}
+
+/* 도로 */
 .rd{position:absolute;background:#fff;border-radius:99px}
-.rdc{position:absolute;background:rgba(0,0,0,.07);border-radius:99px}   /* 케이싱 */
+.rdc{position:absolute;background:rgba(0,0,0,.075);border-radius:99px}
 
-/* ── 건설 모드 오버레이 ── */
-/* 칸마다 칠하지 않는다 — 얼룩이 된다. 커서 아래 고스트만 */
-.ghost{position:absolute;opacity:.62}
-.ghost.bad{filter:grayscale(.5)}
-.badmark{position:absolute;inset:14%;border:2px solid rgba(200,60,60,.85);border-radius:14%}
-
-/* ══ 오브젝트 ══ */
+/* ══ 오브젝트 — 90°이므로 깊이는 그림자로만 ══ */
 .obj{position:absolute}
-/* 받침판은 넥서스에만. 타워마다 깔면 앱 아이콘 격자처럼 보인다 */
-.plate{position:absolute;inset:14%;background:#fff;border-radius:50%;
-       box-shadow:3px 6px 9px rgba(0,0,0,.16)}
-/* 아우라 = 두 겹.
-   ① 배경 헤일로 — 오브젝트 뒤로 퍼지는 빛. 받침판이 중앙을 덮으니 넓게 퍼뜨려야 보인다
-   ② 실루엣 글로우 — 오브젝트 윤곽에서 직접 번지는 빛 (drop-shadow). 이쪽이 "빛난다"로 읽힌다 */
-.aura{position:absolute;inset:-22%;border-radius:50%;pointer-events:none;
-      background:radial-gradient(circle, var(--ac) 0%, transparent 70%);opacity:.20}
+.tw{position:absolute;inset:0;
+    filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.07) rgba(0,0,0,.24))}
+.tw .glow{position:absolute;left:14%;right:14%;top:14%;bottom:14%;border-radius:26%;
+          box-shadow:0 0 calc(var(--cell)*0.18) var(--tc);opacity:.45}
+.tw .lay{position:absolute;left:21%;right:21%;top:21%;bottom:21%;
+         background:var(--tc);border-radius:22%}
+.tw .lay.top{box-shadow:inset 0 calc(var(--cell)*-0.025) 0 rgba(0,0,0,.14)}
 
-/* 타워: 정육면체(T1) → 직육면체(T4). 티어 = 높이 */
-.tw{position:absolute;left:23%;right:23%;bottom:20%;
-    filter:drop-shadow(0 0 calc(var(--cell)*0.10) var(--tc))
-           drop-shadow(2px 4px 5px rgba(0,0,0,.22))}
-.tw .top{height:calc(var(--cell)*0.54*var(--tilt));background:var(--tc);
-         border-radius:18%;position:relative;z-index:2;
-         box-shadow:inset 0 -1px 0 rgba(0,0,0,.12)}   /* 판 이음선 — 깡통의 유일한 흔적 */
-.tw .front{height:calc(var(--cell)*var(--fh));background:var(--tc);filter:brightness(.78);
-           border-radius:0 0 20% 20%;margin-top:calc(var(--cell)*-0.10);position:relative;z-index:1}
-.tw .mouth{position:absolute;left:33%;right:33%;top:16%;height:26%;z-index:3;
-           background:var(--tc);filter:brightness(.66);border-radius:50%}
-
-/* 유닛: 구 + 아우라. 눈·얼굴 없음 */
 .un{position:absolute;border-radius:50%;background:var(--uc);
-    box-shadow:0 0 calc(var(--cell)*0.16) var(--uc),        /* 색 글로우 — 빛이라서 */
-               2px 3px 5px rgba(0,0,0,.20),
-               inset -2px -3px 5px rgba(0,0,0,.13),
-               inset 2px 3px 4px rgba(255,255,255,.34)}
+    box-shadow:0 0 calc(var(--cell)*0.16) var(--uc),
+               calc(var(--cell)*0.05) calc(var(--cell)*0.07) calc(var(--cell)*0.05) rgba(0,0,0,.22),
+               inset -2px -2px 4px rgba(0,0,0,.15),
+               inset 2px 2px 3px rgba(255,255,255,.30)}
 
-/* 넥서스: 정교한 추출기. 무기 아님 */
-.nx{position:absolute;inset:10%}
+.nx{position:absolute;inset:12%;
+    filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.08) rgba(0,0,0,.26))}
+.nx .pad2{position:absolute;inset:-16%;background:#fff;border-radius:50%}
 .nx .ring{position:absolute;inset:0;border-radius:50%;background:var(--o-k)}
-.nx .ring2{position:absolute;inset:18%;border-radius:50%;background:#4d4d4d}
-.nx .bore{position:absolute;inset:38%;border-radius:50%;background:#1c1c1c}
-.nx .leg{position:absolute;background:#404040;border-radius:2px}
-.nx .g1{left:44%;width:12%;top:-15%;height:25%}
-.nx .g2{left:44%;width:12%;bottom:-15%;height:25%}
-.nx .g3{top:44%;height:12%;left:-15%;width:25%}
-.nx .g4{top:44%;height:12%;right:-15%;width:25%}
-.nx .port{position:absolute;right:-10%;top:62%;width:28%;height:20%;background:var(--o-w);
-          border-radius:2px;box-shadow:2px 3px 5px rgba(0,0,0,.26)}
+.nx .ring2{position:absolute;inset:20%;border-radius:50%;background:#4d4d4d}
+.nx .bore{position:absolute;inset:40%;border-radius:50%;background:#1a1a1a}
+.nx .leg{position:absolute;background:#3a3a3a;border-radius:1px}
+.nx .g1{left:45%;width:10%;top:-13%;height:22%}
+.nx .g2{left:45%;width:10%;bottom:-13%;height:22%}
+.nx .g3{top:45%;height:10%;left:-13%;width:22%}
+.nx .g4{top:45%;height:10%;right:-13%;width:22%}
+.nx .port{position:absolute;right:-22%;top:58%;width:26%;height:18%;
+          background:var(--o-w);border-radius:2px}
 
-/* ══ 카드 열 ══ */
-.pad{border-radius:9px;padding:20px 14px;overflow:auto;background:var(--pad)}
-.row{display:flex;gap:24px;align-items:flex-end;justify-content:center;flex-wrap:wrap}
+.ghost{opacity:.6}
+.badmark{position:absolute;inset:14%;border:2px solid rgba(200,55,55,.9);border-radius:20%}
+
+/* ══ 카드 ══ */
+.pad{border-radius:9px;padding:20px 14px;overflow:auto;background:var(--zone)}
+.row{display:flex;gap:22px;align-items:center;justify-content:center;flex-wrap:wrap}
 .item{display:flex;flex-direction:column;align-items:center;gap:6px}
 .item .lb{font-size:9px;font-weight:800;color:var(--lbc)}
-.cellbox{width:var(--cell);height:calc(var(--cell)*var(--tilt));position:relative}
+.cb{width:var(--cell);height:var(--cell);position:relative}
 
-/* ══ 6구역 ══ */
-.zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:10px}
+.zones{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
 .zc{border-radius:9px;overflow:hidden;background:#242424}
 .zc .head{font-size:11px;font-weight:800;padding:8px 10px 7px;color:#ddd}
 .zc .head i{font-style:normal;font-size:9px;color:#888;font-weight:600;margin-left:5px}
-.mini{position:relative;height:132px;overflow:hidden;background:var(--zone);
-      background-image:none}
+.mini{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:6px}
 
 .note{font-size:11px;color:#8a8a8a;margin-top:9px;line-height:1.8}
 .note b{color:#ccc}
 table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
 td,th{padding:6px 7px;border-bottom:1px solid #2c2c2c;text-align:left;vertical-align:top}
 th{color:#8fe0be;font-size:10px;letter-spacing:.06em}
-td.s{color:#9ab;width:36%}
-.two{display:grid;grid-template-columns:1fr;gap:10px}
-@media (min-width:880px){ .two{grid-template-columns:1fr 1fr} }
-@media (max-width:880px){ :root{--cell:33px} }
-@media (max-width:470px){ :root{--cell:25px} .stage,.pad{padding:12px 8px} }
+td.s{color:#9ab;width:34%}
+@media (max-width:1000px){ :root{--cell:26px} }
+@media (max-width:560px){ :root{--cell:17px} .stage{padding:8px} }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v7</h1>
-<div class="sub">선명한 6색 · 은은한 아우라 · 직육면체 타워 · 건설 모드 · 길찾기 도로 · 6구역</div>
+<h1>Defenkov 필드 · 형태 — v8</h1>
+<div class="sub">90° 수직 탑뷰 · 깊이는 그림자로만 · 티어는 판 적층 · 평소/건설 두 상태</div>
 
 <div class="q">
-  <b>v7 — 평소 격자·텍스처 제거 · 건설 중엔 점선만 · 타워 받침판 제거 · 도로 굵게</b><br>
-  <span style="color:#888">v4에서 고친 것:</span><br>
-  ① 타워를 <b>정육면체 → 직육면체</b>로. 티어 = 높이 (어긋난 층은 받침판을 삐져나가는 버그였습니다)<br>
-  ② 타워·유닛에 <b>은은한 아우라</b> — 배경 헤일로 + <b>실루엣 글로우</b> 두 겹 (v5의 0.13은 받침판에 가려 안 보였습니다)<br>
-  ③ <b>건설 상태 / 평소 상태</b>를 분리 (미니 모터웨이 호버 방식)<br>
-  ④ 길을 그리지 않고 <b>BFS 길찾기로 계산</b>해 도로로 렌더<br>
-  ⑤ 유닛을 불규칙 다면체 → <b>구 + 아우라</b>로<br>
-  ⑥ <b>6구역 전부</b>
+  <b>v8에서 바뀐 것 —</b><br>
+  ① <b>70° → 90° 수직 탑뷰.</b> 애매한 각도를 버렸습니다. 깊이는 <b>그림자로만</b><br>
+  ② 티어를 높이 대신 <b>판 적층</b>(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로<br>
+  ③ 평소: <b>3칸 간격 옅은 실선</b>만<br>
+  ④ 건설 중: <b>셀 단위 실선 격자</b> + 보드 밖 <b>대각 해치</b> + <b>경로를 막는 칸</b> 해치 + 전체 옅어짐<br>
+  ⑤ 보드 <b>밖 여백을 실제로 그림</b> — 화면 점유율 50%
 </div>
 
-<h2>평소 <span>초록 구역 · 격자·텍스처 없음</span></h2>
-<div class="stage" id="s-idle"><div class="field" id="f-idle"></div></div>
+<h2>일반 <span>초록 구역</span></h2>
+<div class="stage" id="s-idle"></div>
 <div class="note">
-<b>격자도 점 텍스처도 없습니다.</b> 지형은 평평한 한 면입니다 —
-  레퍼런스가 그렇고, 상시 텍스처는 제가 측정값을 오해해 넣은 것이었습니다.
-  화면에 있는 건 <b>도로 · 타워 · 유닛 · 넥서스</b>뿐입니다.
-  도로는 <b>길찾기(BFS) 결과</b>이고 타워엔 받침판 없이 그림자와 아우라만 붙습니다.
+  격자는 <b>3칸마다 실선 하나</b>(명도차 5.5%). 점 텍스처는 없습니다.
+  보드 밖 여백이 실제로 있어 <b>보드가 화면의 50%</b>를 차지합니다(레퍼런스 측정 49%).
+  도로는 <b>길찾기(BFS)</b> 결과 — 타워 23기를 피해 <b>34칸 · 꺾임 7회</b>로 돌아갑니다.
 </div>
 
 <h2>건설 중 <span>타워를 들었을 때</span></h2>
-<div class="stage" id="s-build"><div class="field" id="f-build"></div></div>
+<div class="stage" id="s-build"></div>
 <div class="note">
-<b>점선 격자만</b> 나타납니다. 칸마다 색을 칠하지 않습니다 — 그러면 얼룩이 됩니다.
-  <br>놓을 수 있는지는 <b>커서 아래에서만</b> 판정합니다. 경로를 막는 자리면 고스트에 붉은 테두리가 붙습니다.
-  <br><b>평소엔 아무것도, 손을 대면 점선.</b>
+  화면이 <b>옅어지고</b> 보드 안에 <b>셀 단위 실선 격자</b>가 깔립니다.
+  <b>보드 밖</b>에 회색 대각 해치, <b>놓으면 경로가 막히는 칸</b>에 붉은 대각 해치 —
+  지금 배치에서 막는 칸은 <b>6칸</b>(초크포인트)입니다.
+  커서 아래 고스트가 막는 자리면 <b>붉은 테두리</b>가 붙습니다.
 </div>
 
-<h2>6구역 <span>같은 보드 · 지형만 그 구역 색</span></h2>
+<h2>6구역 <span>지형만 그 구역 색</span></h2>
 <div class="zones" id="zones"></div>
-<div class="note">
-  지형은 <b>그 구역 색을 저채도(22%)</b>로 깐 것이고, 오브젝트는 <b>같은 팔레트를 고채도(60%)</b>로 씁니다.
-  <b>검 구역</b>에서는 지형이 어두워 아우라와 흰 받침판이 더 두드러집니다 — 다크 테마가 저절로 나옵니다.
-</div>
 
-<h2>타워 <span>정육면체 → 직육면체 · 티어 = 높이</span></h2>
+<h2>타워 <span>판 적층 = 티어</span></h2>
 <div class="pad" id="p-tw"><div class="row" id="towers"></div></div>
 <div class="note">
-  <b>실루엣은 깔끔합니다.</b> "조잡한 깡통"은 기하학적 어긋남이 아니라
-  <b>판 이음선</b>(윗면 아래 얇은 선)으로만 암시합니다 — 깡통은 그 자체로 깔끔한 형태입니다.
-  6색이 <b>같은 골격</b>을 쓰고(레시피 공개), 윗면 구멍이 <b>뭉치는 부위</b>입니다.
-  <b>티어 = 높이</b>: T1은 정육면체, T4는 두 배 높이의 직육면체.
+  90°에선 높이가 안 보이므로 <b>판을 어긋나게 쌓아</b> 층수를 보여줍니다.
+  실루엣은 <b>정직한 라운드 사각</b>이고 조잡함은 <b>판 이음선</b> 하나로만 암시합니다.
+  깊이는 <b>우하 오프셋 그림자</b> 하나가 전부입니다.
 </div>
 
 <h2>유닛 <span>구 + 아우라 · 눈 없음</span></h2>
 <div class="pad" id="p-un"><div class="row" id="units"></div></div>
-<div class="note">
-  불규칙 다면체를 버렸습니다. <b>구 + 아우라</b>가 "뭉친 빛"에 더 맞고 작은 크기에서 훨씬 깔끔합니다.
-  <b>눈·얼굴 없음</b>(자아가 없다) · 종류는 <b>크기</b>로만 구분 · 안쪽 하이라이트로 빛을 품은 느낌.
-</div>
 
 <h2>넥서스 <span>무방비한 추출기</span></h2>
 <div class="pad" id="p-nx"><div class="row" id="nexus"></div></div>
-<div class="note">
-  <b>포신·총구·조준 요소 0개</b>(반격 없음은 영구 원칙). 정확한 동심원 + <b>네 방향 앵커</b>로 땅에 박혀 있고,
-  중앙 검은 구멍이 <b>뽑는 방향(아래)</b>, 오른쪽 흰 조각이 <b>사출포트</b>입니다.
-  타워와 달리 <b>완벽 대칭</b> — 유산 계열이라 정교합니다.
-</div>
 
 <h2>실제 크기 <span>화면 실측</span></h2>
 <div class="pad" id="p-real"><div class="row" id="reals"></div></div>
 
-<h2>팔레트 후보 <span>어느 쪽이 6색이 명확한가</span></h2>
-<div id="pals"></div>
-<div class="note">
-  <b>파스텔이 문제가 아니라 명도 사다리가 문제였습니다.</b> 6색을 균등한 밝기 계단에 맞추니
-  노랑이 베이지가 되고 파랑이 청록이 됐습니다. 선명한 색은 <b>본래 자기 밝기</b>가 있고,
-  그 자연 순서가 이미 사다리(<b>흰-노-초-빨-파-검</b>)와 같습니다 — 노랑은 원래 밝고 파랑은 원래 어둡습니다.
-  <br>그래서 <b>균등 간격만 포기하고 순서는 유지</b>했습니다. 세 후보 모두 순서가 지켜집니다.
-  현재 화면은 <b>A</b>로 그렸습니다.
-</div>
-
-<h2>도출 근거</h2>
+<h2>근거</h2>
 <table id="tbl"></table>
 
 <div class="note" style="margin-top:16px">
-  ⚠ CSS 근사입니다. Unity에선 실제 프리미티브 + 언릿이라 다릅니다. <b>방향</b>만 봐주세요.
+  ⚠ CSS 근사입니다. Unity에선 실제 프리미티브 + 언릿이라 다릅니다. <b>색·비율·구성</b>만 봐주세요.
 </div>
 
 </div>
 <script>
-var COLS=12, ROWS=9, TILT=0.94, LIFT=0.342;
-var CW=100/COLS, CH=100/ROWS;
+var COLS=12, ROWS=9, ACOLS=18, AROWS=12, OFFC=3, OFFR=1.5;
+var ENTRY=[0,4], NEXUS=[11,4], GHOST=[6,4];
 
-/* ── 지형(저채도 22%) / 보드 밖 여백 / 라벨색 ── */
-var ZONES=[
- {k:"흰", d:"거리 0", zone:"#eeeeee", pad:"#e2e2e2", lb:"#555"},
- {k:"노", d:"거리 1", zone:"#c3bda2", pad:"#b4ac8e", lb:"#43402f"},
- {k:"초", d:"거리 2", zone:"#abc3a2", pad:"#98b48e", lb:"#38452f"},
- {k:"빨", d:"거리 3", zone:"#c3a3a2", pad:"#b4908e", lb:"#452f2f"},
- {k:"파", d:"거리 4", zone:"#a2b3c3", pad:"#8ea1b4", lb:"#2f3b45"},
- {k:"검", d:"거리 5", zone:"#4a4a4a", pad:"#3e3e3e", lb:"#b8b8b8"}
-];
-
-/* ── 보드 배치 ── */
 var TOWERS=(function(){
-  /* 엇갈린 벽 미로 — 통로가 위/아래로 번갈아 열려 도로가 지그재그로 꺾인다.
-     BFS 검증: 경로 18칸 · 꺾임 7회 */
   var C=["--o-g","--o-r","--o-b","--o-y","--o-k","--o-w"], out=[], n=0;
-  function wall(col, rows){
-    for(var i=0;i<rows.length;i++){
-      out.push([col, rows[i], C[n%6], (n%4)+1]); n++;
-    }
-  }
-  wall(2,[4,5,6,7,8]);
-  wall(5,[0,1,2,3,4]);
-  wall(8,[4,5,6,7,8]);
+  function wall(col, rows){ for(var i=0;i<rows.length;i++){ out.push([col,rows[i],C[n%6],(n%4)+1]); n++; } }
+  wall(2,[0,1,2,3,4,5,6,7]);
+  wall(5,[1,2,3,4,5,6,7,8]);
+  wall(8,[0,1,2,3,4,5,6]);
   return out;
 })();
-var ENTRY=[0,4], NEXUS=[11,4];
-var GHOST=[6,5];   /* 건설 모드 고스트 — 통로 안 */
 
-function key(c,r){ return c+","+r; }
-function blockedSet(towers){
-  var m={}, i;
-  for(i=0;i<towers.length;i++) m[key(towers[i][0],towers[i][1])]=1;
-  return m;
-}
-/* ── BFS 길찾기: 진입 → 넥서스, 타워 칸 회피 ── */
-function findPath(towers){
-  var block=blockedSet(towers);
+function K(c,r){ return c+","+r; }
+function findPath(extra){
+  var block={}, i;
+  for(i=0;i<TOWERS.length;i++) block[K(TOWERS[i][0],TOWERS[i][1])]=1;
+  if(extra) block[K(extra[0],extra[1])]=1;
   var q=[[ENTRY[0],ENTRY[1]]], seen={}, prev={};
-  seen[key(ENTRY[0],ENTRY[1])]=1;
+  seen[K(ENTRY[0],ENTRY[1])]=1;
   var D=[[1,0],[0,1],[-1,0],[0,-1]];
   while(q.length){
     var cur=q.shift(), c=cur[0], r=cur[1];
     if(c===NEXUS[0] && r===NEXUS[1]) break;
-    for(var i=0;i<4;i++){
-      var nc=c+D[i][0], nr=r+D[i][1], k=key(nc,nr);
-      if(nc<0||nc>=COLS||nr<0||nr>=ROWS) continue;
-      if(seen[k]||block[k]) continue;
-      seen[k]=1; prev[k]=key(c,r); q.push([nc,nr]);
+    for(i=0;i<4;i++){
+      var nc=c+D[i][0], nr=r+D[i][1], k=K(nc,nr);
+      if(nc<0||nc>=COLS||nr<0||nr>=ROWS||seen[k]||block[k]) continue;
+      seen[k]=1; prev[k]=K(c,r); q.push([nc,nr]);
     }
   }
-  var path=[], k=key(NEXUS[0],NEXUS[1]);
+  var path=[], k=K(NEXUS[0],NEXUS[1]);
   if(!seen[k]) return [];
-  while(k){ var p=k.split(","); path.unshift([+p[0],+p[1]]); k=prev[k]; }
+  while(k){ var pp=k.split(","); path.unshift([+pp[0],+pp[1]]); k=prev[k]; }
   return path;
 }
+function blockingCells(){
+  var out=[], occ={}, i;
+  for(i=0;i<TOWERS.length;i++) occ[K(TOWERS[i][0],TOWERS[i][1])]=1;
+  for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
+    var k=K(c,r);
+    if(occ[k]) continue;
+    if((c===ENTRY[0]&&r===ENTRY[1])||(c===NEXUS[0]&&r===NEXUS[1])) continue;
+    if(findPath([c,r]).length===0) out.push([c,r]);
+  }
+  return out;
+}
+function px(n){ return "calc(var(--cell)*"+n+")"; }
 
-/* ── 도로 렌더: 경로 셀마다 관절(원) + 이웃 방향 세그먼트 ── */
 function road(path, casing){
-  var h="", i, w=26;                       /* 도로 폭 % of cell — 레퍼런스는 도로가 화면의 주역이다 */
+  var h="", i, w = casing ? 0.34 : 0.24;
   var cls = casing ? "rdc" : "rd";
-  var pad = casing ? 5 : 0;                /* 케이싱은 살짝 넓게 */
-  var ww = w + pad*2;
   for(i=0;i<path.length;i++){
     var c=path[i][0], r=path[i][1];
-    var cx = (c+0.5)*CW, cy=(r+0.5)*CH;
-    /* 관절 (곡선 이음) */
-    h+='<div class="'+cls+'" style="left:'+(cx - ww*CW/200)+'%;top:'+(cy - ww*CH/200)+'%;'
-      +'width:'+(ww*CW/100)+'%;height:'+(ww*CH/100)+'%"></div>';
-    /* 다음 칸으로 세그먼트 */
+    h+='<div class="'+cls+'" style="left:'+px(c+0.5-w/2)+';top:'+px(r+0.5-w/2)+';'
+      +'width:'+px(w)+';height:'+px(w)+'"></div>';
     if(i<path.length-1){
       var nc=path[i+1][0], nr=path[i+1][1];
-      var nx=(nc+0.5)*CW, ny=(nr+0.5)*CH;
       if(nr===r){
-        var x0=Math.min(cx,nx), x1=Math.max(cx,nx);
-        h+='<div class="'+cls+'" style="left:'+x0+'%;top:'+(cy - ww*CH/200)+'%;'
-          +'width:'+(x1-x0)+'%;height:'+(ww*CH/100)+'%;border-radius:0"></div>';
+        h+='<div class="'+cls+'" style="left:'+px(Math.min(c,nc)+0.5)+';top:'+px(r+0.5-w/2)+';'
+          +'width:'+px(1)+';height:'+px(w)+';border-radius:0"></div>';
       } else {
-        var y0=Math.min(cy,ny), y1=Math.max(cy,ny);
-        h+='<div class="'+cls+'" style="left:'+(cx - ww*CW/200)+'%;top:'+y0+'%;'
-          +'width:'+(ww*CW/100)+'%;height:'+(y1-y0)+'%;border-radius:0"></div>';
+        h+='<div class="'+cls+'" style="left:'+px(c+0.5-w/2)+';top:'+px(Math.min(r,nr)+0.5)+';'
+          +'width:'+px(w)+';height:'+px(1)+';border-radius:0"></div>';
       }
     }
   }
   return h;
 }
 
-/* ── 오브젝트 조각 ── */
 function towerInner(col, lv){
-  var wh = (lv===1) ? 0.68 : 0.68 + 0.30*(lv-1);   /* T1 = 정육면체, 이후 높아짐 */
-  var fh = (wh*LIFT).toFixed(3);
-  return '<div class="aura" style="--ac:var('+col+')"></div>'
-    +'<div class="tw" style="--tc:var('+col+');--fh:'+fh+'">'
-    +'<div class="top"><div class="mouth"></div></div><div class="front"></div></div>';
+  var h='<div class="tw" style="--tc:var('+col+')"><div class="glow"></div>';
+  for(var i=0;i<lv;i++){
+    var d=(lv-1-i)*5;
+    h+='<div class="'+((i===lv-1)?"lay top":"lay")+'" style="transform:translate('+(-d*0.55)+'%,'+(-d)+'%)"></div>';
+  }
+  return h+'</div>';
 }
 function unitInner(col, sz){
-  return '<div class="aura" style="--ac:var('+col+');inset:'+(-sz*0.65)+'%"></div>'
-    +'<div class="un" style="--uc:var('+col+');left:'+(50-sz/2)+'%;top:'+(50-sz/2)+'%;'
-    +'width:'+sz+'%;height:'+(sz/TILT)+'%"></div>';
+  return '<div class="un" style="--uc:var('+col+');left:'+(50-sz/2)+'%;top:'+(50-sz/2)+'%;'
+    +'width:'+sz+'%;height:'+sz+'%"></div>';
 }
 function nexusInner(){
-  return '<div class="nx">'
+  return '<div class="nx"><div class="pad2"></div>'
     +'<div class="leg g1"></div><div class="leg g2"></div><div class="leg g3"></div><div class="leg g4"></div>'
     +'<div class="ring"></div><div class="ring2"></div><div class="bore"></div><div class="port"></div></div>';
 }
 
-/* ── 필드 한 판 ── */
-function buildField(el, opt){
-  var path=findPath(TOWERS), h="", i;
-  h+='<div class="grid'+(opt.build?" on":"")+'"></div>';
-  h+=road(path,true)+road(path,false);
+function buildArena(zone, build, cellOverride){
+  var path=findPath(null), h="", i;
+  var cv = cellOverride ? (";--cell:"+cellOverride) : "";
+  h+='<div class="arena" style="--zone:'+zone+cv+';width:'+px(ACOLS)+';height:'+px(AROWS)+'">';
 
+  if(build){
+    h+='<div class="hatch" style="left:0;top:0;width:100%;height:'+px(OFFR)+'"></div>';
+    h+='<div class="hatch" style="left:0;bottom:0;width:100%;height:'+px(AROWS-OFFR-ROWS)+'"></div>';
+    h+='<div class="hatch" style="left:0;top:'+px(OFFR)+';width:'+px(OFFC)+';height:'+px(ROWS)+'"></div>';
+    h+='<div class="hatch" style="right:0;top:'+px(OFFR)+';width:'+px(ACOLS-OFFC-COLS)+';height:'+px(ROWS)+'"></div>';
+  }
 
+  h+='<div class="board" style="left:'+px(OFFC)+';top:'+px(OFFR)+';width:'+px(COLS)+';height:'+px(ROWS)+'">';
+  h+= build ? '<div class="g-build"></div>' : '<div class="g-idle"></div>';
+  h+= road(path,true) + road(path,false);
+
+  if(build){
+    var bc=blockingCells();
+    for(i=0;i<bc.length;i++)
+      h+='<div class="hatch bad" style="left:'+px(bc[i][0])+';top:'+px(bc[i][1])+';'
+        +'width:'+px(1)+';height:'+px(1)+'"></div>';
+  }
 
   for(i=0;i<TOWERS.length;i++){
     var t=TOWERS[i];
-    h+='<div class="obj" style="left:'+(t[0]*CW)+'%;top:'+(t[1]*CH)+'%;width:'+CW+'%;height:'+CH+'%">'
+    h+='<div class="obj" style="left:'+px(t[0])+';top:'+px(t[1])+';width:'+px(1)+';height:'+px(1)+'">'
       + towerInner(t[2],t[3]) + '</div>';
   }
-  if(opt.build){
-    /* 이 자리에 놓으면 경로가 막히나 — 커서 아래에서만 판정한다 */
-    var test=TOWERS.concat([[GHOST[0],GHOST[1],"--o-b",1]]);
-    var bad = (findPath(test).length===0);
-    h+='<div class="obj ghost'+(bad?" bad":"")+'" style="left:'+(GHOST[0]*CW)+'%;top:'+(GHOST[1]*CH)+'%;'
-      +'width:'+CW+'%;height:'+CH+'%">'
-      + towerInner("--o-b",1) + (bad?'<div class="badmark"></div>':'') + '</div>';
-  }
-  if(!opt.build){
-    /* 유닛은 실제 경로 위에 얹는다 — 길을 따라간다는 것이 보여야 한다 */
-    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[32,26,34,28];
-    var at=[1,5,9,14];
+  if(!build){
+    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[30,24,32,26], at=[2,10,20,29];
     for(i=0;i<at.length;i++){
       if(at[i]>=path.length) continue;
       var pc=path[at[i]];
-      h+='<div class="obj" style="left:'+(pc[0]*CW)+'%;top:'+(pc[1]*CH)+'%;width:'+CW+'%;height:'+CH+'%">'
+      h+='<div class="obj" style="left:'+px(pc[0])+';top:'+px(pc[1])+';width:'+px(1)+';height:'+px(1)+'">'
         + unitInner(UC[i],US[i]) + '</div>';
     }
   }
-  h+='<div class="obj" style="left:'+(NEXUS[0]*CW)+'%;top:'+(NEXUS[1]*CH)+'%;width:'+CW+'%;height:'+CH+'%">'
-    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()+'</div>';
-  el.innerHTML=h;
+  h+='<div class="obj" style="left:'+px(NEXUS[0])+';top:'+px(NEXUS[1])+';width:'+px(1)+';height:'+px(1)+'">'
+    + nexusInner() + '</div>';
+
+  if(build){
+    var bad = findPath(GHOST).length===0;
+    h+='<div class="obj ghost" style="left:'+px(GHOST[0])+';top:'+px(GHOST[1])+';width:'+px(1)+';height:'+px(1)+'">'
+      + towerInner("--o-b",1) + (bad?'<div class="badmark"></div>':'') + '</div>';
+  }
+  h+='</div>';
+  if(build) h+='<div class="dim"></div>';
+  return h+'</div>';
 }
 
-/* ── 그리기 ── */
-function applyZone(elStage, z){
-  elStage.style.setProperty("--zone", z.zone);
-  elStage.style.setProperty("--pad", z.pad);
-  elStage.style.setProperty("--lbc", z.lb);
-}
-var GREEN = ZONES[2];
-applyZone(document.getElementById("s-idle"), GREEN);
-applyZone(document.getElementById("s-build"), GREEN);
-buildField(document.getElementById("f-idle"), {build:false});
-buildField(document.getElementById("f-build"), {build:true});
+var ZONES=[
+ {k:"흰", d:"거리 0", zone:"#eeeeee", lb:"#555"},
+ {k:"노", d:"거리 1", zone:"#c3bda2", lb:"#43402f"},
+ {k:"초", d:"거리 2", zone:"#abc3a2", lb:"#38452f"},
+ {k:"빨", d:"거리 3", zone:"#c3a3a2", lb:"#452f2f"},
+ {k:"파", d:"거리 4", zone:"#a2b3c3", lb:"#2f3b45"},
+ {k:"검", d:"거리 5", zone:"#4a4a4a", lb:"#b8b8b8"}
+];
+var GREEN=ZONES[2];
 
-/* ── 6구역 미니 ── */
+document.getElementById("s-idle").innerHTML  = buildArena(GREEN.zone, false);
+document.getElementById("s-build").innerHTML = buildArena(GREEN.zone, true);
+
 (function(){
   var h="", i;
-  for(i=0;i<ZONES.length;i++){
+  for(i=0;i<ZONES.length;i++)
     h+='<div class="zc"><div class="head">'+ZONES[i].k+' 구역<i>'+ZONES[i].d+'</i></div>'
-      +'<div class="mini" id="mini'+i+'" style="--zone:'+ZONES[i].zone+'"></div></div>';
-  }
+      +'<div class="mini">'+buildArena(ZONES[i].zone,false,"12px")+'</div></div>';
   document.getElementById("zones").innerHTML=h;
-  for(i=0;i<ZONES.length;i++){
-    var el=document.getElementById("mini"+i);
-    el.style.setProperty("--cell","22px");
-    var inner=document.createElement("div");
-    inner.className="field";
-    inner.style.cssText="--zone:"+ZONES[i].zone+";--cell:22px;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%)";
-    el.appendChild(inner);
-    buildField(inner, {build:false});
-  }
 })();
 
-/* ── 타워 6색 × 티어 ── */
+function card(inner, lb, cell){
+  return '<div class="item"><div class="cb" style="--cell:'+cell+'">'+inner+'</div><div class="lb">'+lb+'</div></div>';
+}
 (function(){
-  var C=[["--o-w","흰 · T1",1],["--o-y","노 · T2",2],["--o-g","초 · T3",3],
-         ["--o-r","빨 · T4",4],["--o-b","파 · T2",2],["--o-k","검 · T3",3]];
-  var h="",i;
-  for(i=0;i<C.length;i++)
-    h+='<div class="item"><div class="cellbox" style="--cell:66px">'+towerInner(C[i][0],C[i][2])
-      +'</div><div class="lb">'+C[i][1]+'</div></div>';
+  var C=[["--o-w",1,"흰"],["--o-y",2,"노"],["--o-g",3,"초"],["--o-r",4,"빨"],["--o-b",2,"파"],["--o-k",3,"검"]];
+  var h="", i;
+  for(i=0;i<C.length;i++) h+=card(towerInner(C[i][0],C[i][1]), C[i][2]+" · T"+C[i][1], "70px");
   var p=document.getElementById("p-tw");
-  p.style.setProperty("--pad",GREEN.pad); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
   document.getElementById("towers").innerHTML=h;
 })();
-
-/* ── 유닛 ── */
 (function(){
-  var C=[["--o-r","빨 · 큼",38],["--o-y","노 · 중",30],["--o-g","초 · 중",30],
-         ["--o-b","파 · 작음",24],["--o-w","흰 · 중",30]];
-  var h="",i;
-  for(i=0;i<C.length;i++)
-    h+='<div class="item"><div class="cellbox" style="--cell:66px">'+unitInner(C[i][0],C[i][2])
-      +'</div><div class="lb">'+C[i][1]+'</div></div>';
+  var C=[["--o-r",40,"빨 · 큼"],["--o-y",32,"노 · 중"],["--o-g",34,"초 · 중"],
+         ["--o-b",26,"파 · 작음"],["--o-w",32,"흰 · 중"]];
+  var h="", i;
+  for(i=0;i<C.length;i++) h+=card(unitInner(C[i][0],C[i][1]), C[i][2], "70px");
   var p=document.getElementById("p-un");
-  p.style.setProperty("--pad",GREEN.pad); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
   document.getElementById("units").innerHTML=h;
 })();
-
-/* ── 넥서스 ── */
 (function(){
   var p=document.getElementById("p-nx");
-  p.style.setProperty("--pad",GREEN.pad); p.style.setProperty("--lbc",GREEN.lb);
-  document.getElementById("nexus").innerHTML =
-    '<div class="item"><div class="cellbox" style="--cell:88px">'
-    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()
-    +'</div><div class="lb">추출기 · 사출포트</div></div>';
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
+  document.getElementById("nexus").innerHTML = card(nexusInner(), "추출기 · 사출포트", "92px");
 })();
-
-/* ── 실제 크기 ── */
 (function(){
   var p=document.getElementById("p-real");
-  p.style.setProperty("--pad",GREEN.pad); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
   var h="";
-  h+='<div class="item"><div class="cellbox" style="--cell:26px">'+towerInner("--o-g",1)+'</div><div class="lb">타워 T1</div></div>';
-  h+='<div class="item"><div class="cellbox" style="--cell:26px">'+towerInner("--o-r",4)+'</div><div class="lb">타워 T4</div></div>';
-  h+='<div class="item"><div class="cellbox" style="--cell:26px">'+unitInner("--o-y",32)+'</div><div class="lb">유닛</div></div>';
-  h+='<div class="item"><div class="cellbox" style="--cell:30px">'
-    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()+'</div><div class="lb">넥서스</div></div>';
+  h+=card(towerInner("--o-g",1), "타워 T1", "30px");
+  h+=card(towerInner("--o-r",4), "타워 T4", "30px");
+  h+=card(unitInner("--o-y",34), "유닛", "30px");
+  h+=card(nexusInner(), "넥서스", "34px");
   document.getElementById("reals").innerHTML=h;
 })();
 
-/* ── 팔레트 후보 비교 ── */
-(function(){
-  var SETS=[
-   ["현재 (파스텔 · 균등명도)", ["#f2f2f2","#e8dda5","#87d75f","#e38e8e","#2c85b1","#333333"], "노랑이 베이지, 파랑이 청록으로 보임"],
-   ["A 선명 ★확정",             ["#f2f2f2","#edcb45","#59b238","#db4a43","#2875c3","#333333"], "6색이 명확. 사다리 순서 유지"],
-   ["B 살짝 절제",             ["#f2f2f2","#e2c75a","#61b143","#d4645e","#367abf","#333333"], "A보다 부드럽게"],
-   ["C 강하게",                ["#f7f7f7","#f6cf31","#50b62b","#e5372e","#1b6bc5","#2b2b2b"], "가장 또렷. 과할 수 있음"]
-  ];
-  var N=["흰","노","초","빨","파","검"], h="", i, j;
-  for(i=0;i<SETS.length;i++){
-    h+='<div style="margin-bottom:10px">';
-    h+='<div style="font-size:11px;font-weight:800;color:#ddd;margin-bottom:4px">'+SETS[i][0]
-      +'<span style="color:#888;font-weight:600;margin-left:7px">'+SETS[i][2]+'</span></div>';
-    h+='<div style="display:flex;gap:4px">';
-    for(j=0;j<6;j++){
-      h+='<div style="flex:1;border-radius:5px;overflow:hidden;background:#242424">'
-        +'<div style="height:38px;background:'+SETS[i][1][j]+'"></div>'
-        +'<div style="font-size:8.5px;color:#999;padding:3px 4px;font-family:ui-monospace,monospace;text-align:center">'
-        +N[j]+" "+SETS[i][1][j]+'</div></div>';
-    }
-    h+='</div></div>';
-  }
-  document.getElementById("pals").innerHTML=h;
-})();
-
-/* ── 근거 표 ── */
 (function(){
   var R=[
-   ["타워","<b>정육면체 · 직육면체</b>","T1 = 정육면체, 티어마다 높이만 증가"],
-   ["타워","<b>깡통</b>","실루엣은 깔끔. 조잡함은 판 이음선으로만"],
-   ["타워","<b>뭉치는 기계</b>","윗면의 어두운 구멍"],
-   ["타워","<b>레시피 공개</b>","6색이 같은 골격"],
-   ["타워","<b>빛이 재료</b>","은은한 아우라"],
-   ["유닛","<b>방금 뭉쳐진 빛</b>","구 + 아우라 + 내부 하이라이트"],
-   ["유닛","<b>자아가 없다</b>","눈·얼굴 없음. 종류는 크기로만"],
-   ["유닛","<b>리깅 없이</b>","프리미티브 + transform"],
-   ["넥서스","<b>추출기</b>","동심원 + 네 방향 앵커. 중앙 구멍 = 아래"],
-   ["넥서스","<b>무기가 아니다</b>","포신·총구·조준 요소 0개"],
-   ["넥서스","<b>유산 계열</b>","완벽 대칭 → 타워와 대비"],
-   ["넥서스","<b>사출포트</b>","본체에 달린 비상 포트"],
-   ["필드","<b>구역은 색을 갖는다</b>","지형 = 그 구역 색 저채도 22%"],
-   ["필드","<b>격자는 배치할 때만</b>","평소 5% → 건설 중 14%"],
-   ["필드","<b>경로는 계산된다</b>","BFS 길찾기 결과를 도로로 렌더"],
-   ["색","<b>6색이 명확해야</b>","균등 명도 포기, 자연 명도 사용 (순서는 유지)"],
-   ["색","<b>빛이 재료</b>","배경 헤일로 + 실루엣 글로우(drop-shadow) 두 겹"]
+   ["뷰","<b>90° 수직 탑뷰</b>","애매한 각도 폐기. 깊이는 우하 오프셋 그림자로만"],
+   ["뷰","<b>화면 점유율 50%</b>","보드 12×9 / 카메라 18×12 = 108/216 (레퍼런스 49%)"],
+   ["격자","<b>평소</b>","3칸마다 실선 하나, 명도차 5.5%"],
+   ["격자","<b>건설 중</b>","셀 단위 실선 + 전체 옅어짐"],
+   ["해치","<b>보드 밖</b>","회색 대각 해치 — 지을 수 없는 영역"],
+   ["해치","<b>경로를 막는 칸</b>","붉은 대각 해치 (현재 6칸)"],
+   ["도로","<b>길찾기 결과</b>","BFS 34칸 · 꺾임 7회. 그린 게 아니다"],
+   ["타워","<b>티어 = 판 적층</b>","90°에선 높이가 안 보이므로 어긋나게 쌓는다"],
+   ["타워","<b>깡통</b>","실루엣은 정직한 라운드 사각. 조잡함은 이음선 하나"],
+   ["타워","<b>빛이 재료</b>","은은한 글로우"],
+   ["유닛","<b>방금 뭉쳐진 빛</b>","구 + 글로우 + 내부 하이라이트. 눈 없음"],
+   ["넥서스","<b>무기가 아니다</b>","포신·총구 없음. 동심원 + 앵커 + 사출포트"],
+   ["넥서스","<b>유산 계열</b>","완벽 대칭. 흰 받침판은 넥서스에만"],
+   ["색","<b>6색 A톤 확정</b>","자연 명도, 사다리 순서 유지 (용어사전 §2.0)"]
   ];
-  var h='<tr><th>대상</th><th>근거</th><th>형태로</th></tr>',i;
+  var h='<tr><th>대상</th><th>근거</th><th>형태로</th></tr>', i;
   for(i=0;i<R.length;i++) h+='<tr><td><b>'+R[i][0]+'</b></td><td class="s">'+R[i][1]+'</td><td>'+R[i][2]+'</td></tr>';
   document.getElementById("tbl").innerHTML=h;
 })();
