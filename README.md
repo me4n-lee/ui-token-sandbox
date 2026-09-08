@@ -1,1 +1,1 @@
-Defenkov 미리보기. 로컬 원본은 기획/_공유/ 아래.
+Defenkov 미리보기. 원본 = 기획/_공유/form-language.html
