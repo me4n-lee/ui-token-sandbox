@@ -19,7 +19,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v6</title>
+<title>Defenkov 필드 · 형태 v7</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -47,25 +47,29 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .field{position:relative;flex:none;
        width:calc(var(--cell)*12);height:calc(var(--cell)*9*var(--tilt));
        background:var(--zone);border-radius:6px;
-       background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
-       background-size:6px 6px}
-.grid{position:absolute;inset:0;border-radius:6px;transition:none;
-      background-image:linear-gradient(to right, rgba(0,0,0,var(--grid)) 1px, transparent 1px),
-                       linear-gradient(to bottom, rgba(0,0,0,var(--grid)) 1px, transparent 1px);
-      background-size:var(--cell) calc(var(--cell)*var(--tilt))}
+       background-image:none}
+/* 격자는 평소 아예 없다. 건설 중에만 나타난다 (미니 모터웨이 방식).
+   선이 아니라 셀 교차점의 점 — 선을 그으면 화면이 갈라져 보인다 */
+.grid{display:none}
+.grid.on{display:block;position:absolute;inset:0;border-radius:6px;
+      background-image:radial-gradient(circle, rgba(0,0,0,.30) 1.3px, transparent 1.4px);
+      background-size:var(--cell) calc(var(--cell)*var(--tilt));
+      background-position:calc(var(--cell)*-0.5) calc(var(--cell)*var(--tilt)*-0.5)}
 
 /* ── 도로: 길찾기 결과를 흰 굵은 선 + 회색 케이싱으로 ── */
 .rd{position:absolute;background:#fff;border-radius:99px}
 .rdc{position:absolute;background:rgba(0,0,0,.07);border-radius:99px}   /* 케이싱 */
 
 /* ── 건설 모드 오버레이 ── */
-.ok{position:absolute;background:rgba(255,255,255,.34);border-radius:12%}
-.no{position:absolute;background:rgba(200,80,80,.24);border-radius:12%}
-.ghost{position:absolute;opacity:.55}
+/* 칸마다 칠하지 않는다 — 얼룩이 된다. 커서 아래 고스트만 */
+.ghost{position:absolute;opacity:.62}
+.ghost.bad{filter:grayscale(.5)}
+.badmark{position:absolute;inset:14%;border:2px solid rgba(200,60,60,.85);border-radius:14%}
 
 /* ══ 오브젝트 ══ */
 .obj{position:absolute}
-.plate{position:absolute;inset:7%;background:#fff;border-radius:26%;
+/* 받침판은 넥서스에만. 타워마다 깔면 앱 아이콘 격자처럼 보인다 */
+.plate{position:absolute;inset:14%;background:#fff;border-radius:50%;
        box-shadow:3px 6px 9px rgba(0,0,0,.16)}
 /* 아우라 = 두 겹.
    ① 배경 헤일로 — 오브젝트 뒤로 퍼지는 빛. 받침판이 중앙을 덮으니 넓게 퍼뜨려야 보인다
@@ -74,11 +78,12 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
       background:radial-gradient(circle, var(--ac) 0%, transparent 70%);opacity:.20}
 
 /* 타워: 정육면체(T1) → 직육면체(T4). 티어 = 높이 */
-.tw{position:absolute;left:18%;right:18%;bottom:17%;
-    filter:drop-shadow(0 0 calc(var(--cell)*0.11) var(--tc))}
-.tw .top{height:calc(var(--cell)*0.68*var(--tilt));background:var(--tc);
-         border-radius:20%;position:relative;z-index:2;
-         box-shadow:inset 0 -1px 0 rgba(0,0,0,.10)}   /* 판 이음선 — 깡통의 유일한 흔적 */
+.tw{position:absolute;left:23%;right:23%;bottom:20%;
+    filter:drop-shadow(0 0 calc(var(--cell)*0.10) var(--tc))
+           drop-shadow(2px 4px 5px rgba(0,0,0,.22))}
+.tw .top{height:calc(var(--cell)*0.54*var(--tilt));background:var(--tc);
+         border-radius:18%;position:relative;z-index:2;
+         box-shadow:inset 0 -1px 0 rgba(0,0,0,.12)}   /* 판 이음선 — 깡통의 유일한 흔적 */
 .tw .front{height:calc(var(--cell)*var(--fh));background:var(--tc);filter:brightness(.78);
            border-radius:0 0 20% 20%;margin-top:calc(var(--cell)*-0.10);position:relative;z-index:1}
 .tw .mouth{position:absolute;left:33%;right:33%;top:16%;height:26%;z-index:3;
@@ -117,8 +122,7 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .zc .head{font-size:11px;font-weight:800;padding:8px 10px 7px;color:#ddd}
 .zc .head i{font-style:normal;font-size:9px;color:#888;font-weight:600;margin-left:5px}
 .mini{position:relative;height:132px;overflow:hidden;background:var(--zone);
-      background-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,.05) 1.1px, transparent 1.2px);
-      background-size:6px 6px}
+      background-image:none}
 
 .note{font-size:11px;color:#8a8a8a;margin-top:9px;line-height:1.8}
 .note b{color:#ccc}
@@ -135,11 +139,11 @@ td.s{color:#9ab;width:36%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v6</h1>
+<h1>Defenkov 필드 · 형태 — v7</h1>
 <div class="sub">선명한 6색 · 은은한 아우라 · 직육면체 타워 · 건설 모드 · 길찾기 도로 · 6구역</div>
 
 <div class="q">
-  <b>v6 — 6색 A톤 확정 · 아우라를 실루엣 글로우로 재작업</b><br>
+  <b>v7 — 평소 격자·텍스처 제거 · 건설 중엔 점선만 · 타워 받침판 제거 · 도로 굵게</b><br>
   <span style="color:#888">v4에서 고친 것:</span><br>
   ① 타워를 <b>정육면체 → 직육면체</b>로. 티어 = 높이 (어긋난 층은 받침판을 삐져나가는 버그였습니다)<br>
   ② 타워·유닛에 <b>은은한 아우라</b> — 배경 헤일로 + <b>실루엣 글로우</b> 두 겹 (v5의 0.13은 받침판에 가려 안 보였습니다)<br>
@@ -149,21 +153,21 @@ td.s{color:#9ab;width:36%}
   ⑥ <b>6구역 전부</b>
 </div>
 
-<h2>평소 <span>초록 구역 · 격자 거의 안 보임</span></h2>
+<h2>평소 <span>초록 구역 · 격자·텍스처 없음</span></h2>
 <div class="stage" id="s-idle"><div class="field" id="f-idle"></div></div>
 <div class="note">
-  격자는 <b>명도차 5%</b>로 거의 안 보입니다. 도로는 <b>길찾기(BFS) 결과</b>를 흰 굵은 선 +
-  회색 케이싱으로 렌더한 것입니다 — 타워를 피해 돌아가는 실제 경로입니다.
-  타워·유닛에 <b>아우라</b>가 은은하게 깔려 있습니다.
+<b>격자도 점 텍스처도 없습니다.</b> 지형은 평평한 한 면입니다 —
+  레퍼런스가 그렇고, 상시 텍스처는 제가 측정값을 오해해 넣은 것이었습니다.
+  화면에 있는 건 <b>도로 · 타워 · 유닛 · 넥서스</b>뿐입니다.
+  도로는 <b>길찾기(BFS) 결과</b>이고 타워엔 받침판 없이 그림자와 아우라만 붙습니다.
 </div>
 
 <h2>건설 중 <span>타워를 들었을 때</span></h2>
 <div class="stage" id="s-build"><div class="field" id="f-build"></div></div>
 <div class="note">
-  <b>격자가 드러나고</b>(명도차 5% → 14%) 놓을 수 있는 칸이 <b>흰 틴트</b>로,
-  놓으면 경로를 막는 칸이 <b>붉은 틴트</b>로 표시됩니다. 커서 아래에 <b>반투명 고스트</b>가 붙습니다.
-  <br>미니 모터웨이가 도로를 그으려 할 때 격자가 나타나는 것과 같은 방식입니다.
-  <b>평소엔 한 면, 손을 대면 격자.</b>
+<b>점선 격자만</b> 나타납니다. 칸마다 색을 칠하지 않습니다 — 그러면 얼룩이 됩니다.
+  <br>놓을 수 있는지는 <b>커서 아래에서만</b> 판정합니다. 경로를 막는 자리면 고스트에 붉은 테두리가 붙습니다.
+  <br><b>평소엔 아무것도, 손을 대면 점선.</b>
 </div>
 
 <h2>6구역 <span>같은 보드 · 지형만 그 구역 색</span></h2>
@@ -280,7 +284,7 @@ function findPath(towers){
 
 /* ── 도로 렌더: 경로 셀마다 관절(원) + 이웃 방향 세그먼트 ── */
 function road(path, casing){
-  var h="", i, w=16;                       /* 도로 폭 % of cell */
+  var h="", i, w=26;                       /* 도로 폭 % of cell — 레퍼런스는 도로가 화면의 주역이다 */
   var cls = casing ? "rdc" : "rd";
   var pad = casing ? 5 : 0;                /* 케이싱은 살짝 넓게 */
   var ww = w + pad*2;
@@ -313,7 +317,6 @@ function towerInner(col, lv){
   var wh = (lv===1) ? 0.68 : 0.68 + 0.30*(lv-1);   /* T1 = 정육면체, 이후 높아짐 */
   var fh = (wh*LIFT).toFixed(3);
   return '<div class="aura" style="--ac:var('+col+')"></div>'
-    +'<div class="plate"></div>'
     +'<div class="tw" style="--tc:var('+col+');--fh:'+fh+'">'
     +'<div class="top"><div class="mouth"></div></div><div class="front"></div></div>';
 }
@@ -331,22 +334,10 @@ function nexusInner(){
 /* ── 필드 한 판 ── */
 function buildField(el, opt){
   var path=findPath(TOWERS), h="", i;
-  h+='<div class="grid" style="--grid:'+(opt.build?0.14:0.05)+'"></div>';
+  h+='<div class="grid'+(opt.build?" on":"")+'"></div>';
   h+=road(path,true)+road(path,false);
 
-  if(opt.build){
-    /* 놓을 수 있는 칸 / 막는 칸 */
-    var block=blockedSet(TOWERS);
-    for(var r=0;r<ROWS;r++) for(var c=0;c<COLS;c++){
-      var k=key(c,r);
-      if(block[k]) continue;
-      if((c===ENTRY[0]&&r===ENTRY[1])||(c===NEXUS[0]&&r===NEXUS[1])) continue;
-      var test=TOWERS.concat([[c,r,"--o-g",1]]);
-      var cls = (findPath(test).length===0) ? "no" : "ok";
-      h+='<div class="'+cls+'" style="left:'+(c*CW+CW*0.12)+'%;top:'+(r*CH+CH*0.12)+'%;'
-        +'width:'+(CW*0.76)+'%;height:'+(CH*0.76)+'%"></div>';
-    }
-  }
+
 
   for(i=0;i<TOWERS.length;i++){
     var t=TOWERS[i];
@@ -354,8 +345,12 @@ function buildField(el, opt){
       + towerInner(t[2],t[3]) + '</div>';
   }
   if(opt.build){
-    h+='<div class="obj ghost" style="left:'+(GHOST[0]*CW)+'%;top:'+(GHOST[1]*CH)+'%;width:'+CW+'%;height:'+CH+'%">'
-      + towerInner("--o-b",1) + '</div>';
+    /* 이 자리에 놓으면 경로가 막히나 — 커서 아래에서만 판정한다 */
+    var test=TOWERS.concat([[GHOST[0],GHOST[1],"--o-b",1]]);
+    var bad = (findPath(test).length===0);
+    h+='<div class="obj ghost'+(bad?" bad":"")+'" style="left:'+(GHOST[0]*CW)+'%;top:'+(GHOST[1]*CH)+'%;'
+      +'width:'+CW+'%;height:'+CH+'%">'
+      + towerInner("--o-b",1) + (bad?'<div class="badmark"></div>':'') + '</div>';
   }
   if(!opt.build){
     /* 유닛은 실제 경로 위에 얹는다 — 길을 따라간다는 것이 보여야 한다 */
