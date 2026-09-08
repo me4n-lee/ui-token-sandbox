@@ -55,16 +55,10 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
   background-size:var(--cell) var(--cell);
   box-shadow:0 0 0 1px rgba(0,0,0,.18)}
 
-/* 지을 수 없는 곳 = 프로스트 글래스.
-   ⚠ 지형이 단색이라 blur만으로는 흐려질 게 없다 — 반투명 베일이 실제 효과를 내고
-   blur는 경계와 겹친 오브젝트·도로에만 걸린다. 둘을 같이 쓴다. */
-.veil{position:absolute;background:var(--veil);
-  -webkit-backdrop-filter:blur(3px) saturate(.72);
-          backdrop-filter:blur(3px) saturate(.72)}
-.veil.bad{background:var(--veilbad);
-  -webkit-backdrop-filter:blur(2.5px) saturate(.6);
-          backdrop-filter:blur(2.5px) saturate(.6);
-  border-radius:10%}
+/* 지을 수 없는 곳 = 반투명 + 블러 */
+.veil{position:absolute;background:rgba(255,255,255,.45);
+  -webkit-backdrop-filter:blur(3px);
+          backdrop-filter:blur(3px)}
 
 /* 건설 중엔 화면이 옅어진다 */
 .dim{position:absolute;inset:0;background:var(--dim);pointer-events:none}
@@ -316,7 +310,7 @@ function buildArena(z, build, cellOverride){
   if(build){
     var bc=blockingCells();
     for(i=0;i<bc.length;i++)
-      h+='<div class="veil bad" style="left:'+px(bc[i][0])+';top:'+px(bc[i][1])+';'
+      h+='<div class="veil" style="left:'+px(bc[i][0])+';top:'+px(bc[i][1])+';'
         +'width:'+px(1)+';height:'+px(1)+'"></div>';
   }
 
