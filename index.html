@@ -17,7 +17,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v9</title>
+<title>Defenkov 필드 · 형태 v10</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -72,20 +72,23 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .obj{position:absolute}
 .tw{position:absolute;inset:0;
     filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.07) rgba(0,0,0,.24))}
-.tw .glow{position:absolute;left:4%;right:4%;top:4%;bottom:4%;border-radius:22%;
+.tw .glow{position:absolute;left:9%;right:9%;top:9%;bottom:9%;border-radius:24%;
           box-shadow:0 0 calc(var(--cell)*0.16) var(--tc);opacity:.42}
-/* 셀의 90%를 채운다 — 격자 20px이면 건물 18px */
-.tw .lay{position:absolute;left:5%;right:5%;top:5%;bottom:5%;
-         background:var(--tc);border-radius:20%}
-.tw .lay.top{box-shadow:inset 0 calc(var(--cell)*-0.025) 0 rgba(0,0,0,.14)}
+/* 셀의 80%를 채운다 — 격자 20px이면 건물 16px.
+   외곽선(--ring)은 자기 색 타워가 자기 구역 지형에 묻히는 것을 막는다(06형태언어.md §1.1) */
+.tw .lay{position:absolute;left:10%;right:10%;top:10%;bottom:10%;
+         background:var(--tc);border-radius:22%;
+         box-shadow:0 0 0 1px var(--ring)}
+.tw .lay.top{box-shadow:0 0 0 1px var(--ring), inset 0 calc(var(--cell)*-0.03) 0 rgba(0,0,0,.14)}
 
 .un{position:absolute;border-radius:50%;background:var(--uc);
-    box-shadow:0 0 calc(var(--cell)*0.16) var(--uc),
+    box-shadow:0 0 0 1px var(--ring),
+               0 0 calc(var(--cell)*0.16) var(--uc),
                calc(var(--cell)*0.05) calc(var(--cell)*0.07) calc(var(--cell)*0.05) rgba(0,0,0,.22),
                inset -2px -2px 4px rgba(0,0,0,.15),
                inset 2px 2px 3px rgba(255,255,255,.30)}
 
-.nx{position:absolute;inset:7%;
+.nx{position:absolute;inset:12%;
     filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.08) rgba(0,0,0,.26))}
 .nx .pad2{position:absolute;inset:-6%;background:#fff;border-radius:50%}
 .nx .ring{position:absolute;inset:0;border-radius:50%;background:var(--o-k)}
@@ -128,17 +131,19 @@ td.s{color:#9ab;width:34%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v9</h1>
+<h1>Defenkov 필드 · 형태 — v10</h1>
 <div class="sub">90° 수직 탑뷰 · 깊이는 그림자로만 · 티어는 판 적층 · 평소/건설 두 상태</div>
 
 <div class="q">
-  <b>v9 — 건물이 셀의 90%를 채움</b><br><span style="color:#888">v8:</span><br>
+  <b>v10 — 건물 80% · 지형색 파스텔 재작업 · 외곽선</b><br><span style="color:#888">v8:</span><br>
   ① <b>70° → 90° 수직 탑뷰.</b> 애매한 각도를 버렸습니다. 깊이는 <b>그림자로만</b><br>
   ② 티어를 높이 대신 <b>판 적층</b>(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로<br>
   ③ 평소: <b>3칸 간격 옅은 실선</b>만<br>
   ④ 건설 중: <b>셀 단위 실선 격자</b> + 보드 밖 <b>대각 해치</b> + <b>경로를 막는 칸</b> 해치 + 전체 옅어짐<br>
   ⑤ 보드 <b>밖 여백을 실제로 그림</b> — 화면 점유율 50%<br>
-  ⑥ <b>건물이 격자를 꽉 채움</b> — 셀의 90% (격자 20px이면 건물 18px)
+  ⑥ <b>건물이 셀의 80%</b> (격자 20px → 건물 16px)<br>
+  ⑦ <b>지형색을 타워색의 파스텔판으로</b> — 채도를 죽였더니 넷이 흙빛으로 수렴해 괴리감이 생겼습니다<br>
+  ⑧ <b>외곽선 추가</b> — 자기 색 타워가 자기 구역에 묻히는 것을 막습니다(흰 대비 1.02였습니다)
 </div>
 
 <h2>일반 <span>초록 구역</span></h2>
@@ -273,10 +278,12 @@ function nexusInner(){
     +'<div class="ring"></div><div class="ring2"></div><div class="bore"></div><div class="port"></div></div>';
 }
 
-function buildArena(zone, build, cellOverride){
+function buildArena(z, build, cellOverride){
+  var zone = (typeof z === "string") ? z : z.zone;
+  var ring = (typeof z === "string") ? "rgba(0,0,0,.20)" : z.ring;
   var path=findPath(null), h="", i;
   var cv = cellOverride ? (";--cell:"+cellOverride) : "";
-  h+='<div class="arena" style="--zone:'+zone+cv+';width:'+px(ACOLS)+';height:'+px(AROWS)+'">';
+  h+='<div class="arena" style="--zone:'+zone+';--ring:'+ring+cv+';width:'+px(ACOLS)+';height:'+px(AROWS)+'">';
 
   if(build){
     h+='<div class="hatch" style="left:0;top:0;width:100%;height:'+px(OFFR)+'"></div>';
@@ -302,7 +309,7 @@ function buildArena(zone, build, cellOverride){
       + towerInner(t[2],t[3]) + '</div>';
   }
   if(!build){
-    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[42,34,46,36], at=[2,10,20,29];
+    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[38,30,40,32], at=[2,10,20,29];
     for(i=0;i<at.length;i++){
       if(at[i]>=path.length) continue;
       var pc=path[at[i]];
@@ -323,24 +330,26 @@ function buildArena(zone, build, cellOverride){
   return h+'</div>';
 }
 
+/* 지형 = 타워색의 파스텔판. 채도를 죽이면(구 22%) 넷이 다 흙빛으로 수렴해 괴리감이 생긴다.
+   채도는 52%로 유지하고 밝기만 84%로 올린다. ring = 반대 극점 외곽선 */
 var ZONES=[
- {k:"흰", d:"거리 0", zone:"#eeeeee", lb:"#555"},
- {k:"노", d:"거리 1", zone:"#c3bda2", lb:"#43402f"},
- {k:"초", d:"거리 2", zone:"#abc3a2", lb:"#38452f"},
- {k:"빨", d:"거리 3", zone:"#c3a3a2", lb:"#452f2f"},
- {k:"파", d:"거리 4", zone:"#a2b3c3", lb:"#2f3b45"},
- {k:"검", d:"거리 5", zone:"#4a4a4a", lb:"#b8b8b8"}
+ {k:"흰", d:"거리 0", zone:"#ebebeb", lb:"#555",    ring:"rgba(0,0,0,.20)"},
+ {k:"노", d:"거리 1", zone:"#ebe3c1", lb:"#4a4330", ring:"rgba(0,0,0,.20)"},
+ {k:"초", d:"거리 2", zone:"#ccebc1", lb:"#38492f", ring:"rgba(0,0,0,.20)"},
+ {k:"빨", d:"거리 3", zone:"#ebc3c1", lb:"#4a2f2f", ring:"rgba(0,0,0,.20)"},
+ {k:"파", d:"거리 4", zone:"#c1d6eb", lb:"#2f3d4a", ring:"rgba(0,0,0,.20)"},
+ {k:"검", d:"거리 5", zone:"#4d4d4d", lb:"#c0c0c0", ring:"rgba(255,255,255,.26)"}
 ];
 var GREEN=ZONES[2];
 
-document.getElementById("s-idle").innerHTML  = buildArena(GREEN.zone, false);
-document.getElementById("s-build").innerHTML = buildArena(GREEN.zone, true);
+document.getElementById("s-idle").innerHTML  = buildArena(GREEN, false);
+document.getElementById("s-build").innerHTML = buildArena(GREEN, true);
 
 (function(){
   var h="", i;
   for(i=0;i<ZONES.length;i++)
     h+='<div class="zc"><div class="head">'+ZONES[i].k+' 구역<i>'+ZONES[i].d+'</i></div>'
-      +'<div class="mini">'+buildArena(ZONES[i].zone,false,"12px")+'</div></div>';
+      +'<div class="mini">'+buildArena(ZONES[i],false,"12px")+'</div></div>';
   document.getElementById("zones").innerHTML=h;
 })();
 
@@ -352,7 +361,7 @@ function card(inner, lb, cell){
   var h="", i;
   for(i=0;i<C.length;i++) h+=card(towerInner(C[i][0],C[i][1]), C[i][2]+" · T"+C[i][1], "70px");
   var p=document.getElementById("p-tw");
-  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb); p.style.setProperty("--ring",GREEN.ring);
   document.getElementById("towers").innerHTML=h;
 })();
 (function(){
@@ -361,17 +370,17 @@ function card(inner, lb, cell){
   var h="", i;
   for(i=0;i<C.length;i++) h+=card(unitInner(C[i][0],C[i][1]), C[i][2], "70px");
   var p=document.getElementById("p-un");
-  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb); p.style.setProperty("--ring",GREEN.ring);
   document.getElementById("units").innerHTML=h;
 })();
 (function(){
   var p=document.getElementById("p-nx");
-  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb); p.style.setProperty("--ring",GREEN.ring);
   document.getElementById("nexus").innerHTML = card(nexusInner(), "추출기 · 사출포트", "92px");
 })();
 (function(){
   var p=document.getElementById("p-real");
-  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb);
+  p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb); p.style.setProperty("--ring",GREEN.ring);
   var h="";
   h+=card(towerInner("--o-g",1), "타워 T1", "30px");
   h+=card(towerInner("--o-r",4), "타워 T4", "30px");
@@ -391,7 +400,9 @@ function card(inner, lb, cell){
    ["도로","<b>길찾기 결과</b>","BFS 34칸 · 꺾임 7회. 그린 게 아니다"],
    ["타워","<b>티어 = 판 적층</b>","90°에선 높이가 안 보이므로 어긋나게 쌓는다"],
    ["타워","<b>깡통</b>","실루엣은 정직한 라운드 사각. 조잡함은 이음선 하나"],
-   ["타워","<b>격자를 꽉 채움</b>","셀의 90% — 벽으로 이으면 한 덩어리로 읽힌다"],
+   ["타워","<b>셀의 80%</b>","격자 20px이면 건물 16px"],
+   ["타워","<b>외곽선</b>","자기 색 타워가 자기 구역에 묻히는 것을 막는다 (반대 극점 색)"],
+   ["지형","<b>타워색의 파스텔판</b>","채도 52% 유지 + 밝기 84%. 채도를 죽이면 흙빛으로 수렴한다"],
    ["타워","<b>빛이 재료</b>","은은한 글로우"],
    ["유닛","<b>방금 뭉쳐진 빛</b>","구 + 글로우 + 내부 하이라이트. 눈 없음"],
    ["넥서스","<b>무기가 아니다</b>","포신·총구 없음. 동심원 + 앵커 + 사출포트"],
