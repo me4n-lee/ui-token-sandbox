@@ -17,7 +17,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v8</title>
+<title>Defenkov 필드 · 형태 v9</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -72,10 +72,11 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .obj{position:absolute}
 .tw{position:absolute;inset:0;
     filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.07) rgba(0,0,0,.24))}
-.tw .glow{position:absolute;left:14%;right:14%;top:14%;bottom:14%;border-radius:26%;
-          box-shadow:0 0 calc(var(--cell)*0.18) var(--tc);opacity:.45}
-.tw .lay{position:absolute;left:21%;right:21%;top:21%;bottom:21%;
-         background:var(--tc);border-radius:22%}
+.tw .glow{position:absolute;left:4%;right:4%;top:4%;bottom:4%;border-radius:22%;
+          box-shadow:0 0 calc(var(--cell)*0.16) var(--tc);opacity:.42}
+/* 셀의 90%를 채운다 — 격자 20px이면 건물 18px */
+.tw .lay{position:absolute;left:5%;right:5%;top:5%;bottom:5%;
+         background:var(--tc);border-radius:20%}
 .tw .lay.top{box-shadow:inset 0 calc(var(--cell)*-0.025) 0 rgba(0,0,0,.14)}
 
 .un{position:absolute;border-radius:50%;background:var(--uc);
@@ -84,9 +85,9 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
                inset -2px -2px 4px rgba(0,0,0,.15),
                inset 2px 2px 3px rgba(255,255,255,.30)}
 
-.nx{position:absolute;inset:12%;
+.nx{position:absolute;inset:7%;
     filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.08) rgba(0,0,0,.26))}
-.nx .pad2{position:absolute;inset:-16%;background:#fff;border-radius:50%}
+.nx .pad2{position:absolute;inset:-6%;background:#fff;border-radius:50%}
 .nx .ring{position:absolute;inset:0;border-radius:50%;background:var(--o-k)}
 .nx .ring2{position:absolute;inset:20%;border-radius:50%;background:#4d4d4d}
 .nx .bore{position:absolute;inset:40%;border-radius:50%;background:#1a1a1a}
@@ -95,7 +96,7 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .nx .g2{left:45%;width:10%;bottom:-13%;height:22%}
 .nx .g3{top:45%;height:10%;left:-13%;width:22%}
 .nx .g4{top:45%;height:10%;right:-13%;width:22%}
-.nx .port{position:absolute;right:-22%;top:58%;width:26%;height:18%;
+.nx .port{position:absolute;right:-14%;top:58%;width:24%;height:17%;
           background:var(--o-w);border-radius:2px}
 
 .ghost{opacity:.6}
@@ -127,16 +128,17 @@ td.s{color:#9ab;width:34%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v8</h1>
+<h1>Defenkov 필드 · 형태 — v9</h1>
 <div class="sub">90° 수직 탑뷰 · 깊이는 그림자로만 · 티어는 판 적층 · 평소/건설 두 상태</div>
 
 <div class="q">
-  <b>v8에서 바뀐 것 —</b><br>
+  <b>v9 — 건물이 셀의 90%를 채움</b><br><span style="color:#888">v8:</span><br>
   ① <b>70° → 90° 수직 탑뷰.</b> 애매한 각도를 버렸습니다. 깊이는 <b>그림자로만</b><br>
   ② 티어를 높이 대신 <b>판 적층</b>(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로<br>
   ③ 평소: <b>3칸 간격 옅은 실선</b>만<br>
   ④ 건설 중: <b>셀 단위 실선 격자</b> + 보드 밖 <b>대각 해치</b> + <b>경로를 막는 칸</b> 해치 + 전체 옅어짐<br>
-  ⑤ 보드 <b>밖 여백을 실제로 그림</b> — 화면 점유율 50%
+  ⑤ 보드 <b>밖 여백을 실제로 그림</b> — 화면 점유율 50%<br>
+  ⑥ <b>건물이 격자를 꽉 채움</b> — 셀의 90% (격자 20px이면 건물 18px)
 </div>
 
 <h2>일반 <span>초록 구역</span></h2>
@@ -256,7 +258,7 @@ function road(path, casing){
 function towerInner(col, lv){
   var h='<div class="tw" style="--tc:var('+col+')"><div class="glow"></div>';
   for(var i=0;i<lv;i++){
-    var d=(lv-1-i)*5;
+    var d=(lv-1-i)*3;
     h+='<div class="'+((i===lv-1)?"lay top":"lay")+'" style="transform:translate('+(-d*0.55)+'%,'+(-d)+'%)"></div>';
   }
   return h+'</div>';
@@ -300,7 +302,7 @@ function buildArena(zone, build, cellOverride){
       + towerInner(t[2],t[3]) + '</div>';
   }
   if(!build){
-    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[30,24,32,26], at=[2,10,20,29];
+    var UC=["--o-r","--o-y","--o-g","--o-b"], US=[42,34,46,36], at=[2,10,20,29];
     for(i=0;i<at.length;i++){
       if(at[i]>=path.length) continue;
       var pc=path[at[i]];
@@ -354,8 +356,8 @@ function card(inner, lb, cell){
   document.getElementById("towers").innerHTML=h;
 })();
 (function(){
-  var C=[["--o-r",40,"빨 · 큼"],["--o-y",32,"노 · 중"],["--o-g",34,"초 · 중"],
-         ["--o-b",26,"파 · 작음"],["--o-w",32,"흰 · 중"]];
+  var C=[["--o-r",54,"빨 · 큼"],["--o-y",42,"노 · 중"],["--o-g",46,"초 · 중"],
+         ["--o-b",34,"파 · 작음"],["--o-w",42,"흰 · 중"]];
   var h="", i;
   for(i=0;i<C.length;i++) h+=card(unitInner(C[i][0],C[i][1]), C[i][2], "70px");
   var p=document.getElementById("p-un");
@@ -373,7 +375,7 @@ function card(inner, lb, cell){
   var h="";
   h+=card(towerInner("--o-g",1), "타워 T1", "30px");
   h+=card(towerInner("--o-r",4), "타워 T4", "30px");
-  h+=card(unitInner("--o-y",34), "유닛", "30px");
+  h+=card(unitInner("--o-y",44), "유닛", "30px");
   h+=card(nexusInner(), "넥서스", "34px");
   document.getElementById("reals").innerHTML=h;
 })();
@@ -389,6 +391,7 @@ function card(inner, lb, cell){
    ["도로","<b>길찾기 결과</b>","BFS 34칸 · 꺾임 7회. 그린 게 아니다"],
    ["타워","<b>티어 = 판 적층</b>","90°에선 높이가 안 보이므로 어긋나게 쌓는다"],
    ["타워","<b>깡통</b>","실루엣은 정직한 라운드 사각. 조잡함은 이음선 하나"],
+   ["타워","<b>격자를 꽉 채움</b>","셀의 90% — 벽으로 이으면 한 덩어리로 읽힌다"],
    ["타워","<b>빛이 재료</b>","은은한 글로우"],
    ["유닛","<b>방금 뭉쳐진 빛</b>","구 + 글로우 + 내부 하이라이트. 눈 없음"],
    ["넥서스","<b>무기가 아니다</b>","포신·총구 없음. 동심원 + 앵커 + 사출포트"],
