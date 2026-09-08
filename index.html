@@ -19,12 +19,13 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v4</title>
+<title>Defenkov 필드 · 형태 v5</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
-  /* 오브젝트 6색 · 채도 60% */
-  --o-w:#f2f2f2; --o-y:#e8dda5; --o-g:#87d75f; --o-r:#e38e8e; --o-b:#2c85b1; --o-k:#333333;
+  /* 오브젝트 6색 — 각 색이 자기 자연 명도를 쓴다. 균등 간격은 포기, 사다리 순서는 유지.
+     휘도 흰0.888 > 노0.612 > 초0.344 > 빨0.204 > 파0.172 > 검0.033 */
+  --o-w:#f2f2f2; --o-y:#edcb45; --o-g:#59b238; --o-r:#db4a43; --o-b:#2875c3; --o-k:#333333;
   --cell:52px; --tilt:0.94; --lift:0.342;
   --grid:0.05;       /* 평소 격자 알파 */
 }
@@ -67,8 +68,9 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .plate{position:absolute;inset:7%;background:#fff;border-radius:26%;
        box-shadow:3px 6px 9px rgba(0,0,0,.16)}
 /* 아우라 — 빛이 재료라서. 오브젝트 뒤에 은은하게 */
-.aura{position:absolute;inset:-14%;border-radius:50%;pointer-events:none;
-      background:radial-gradient(circle, var(--ac) 0%, transparent 68%);opacity:.42}
+/* 은은히. 있는지 모를 정도가 목표 — v4의 0.42는 과했다 */
+.aura{position:absolute;inset:-9%;border-radius:50%;pointer-events:none;
+      background:radial-gradient(circle, var(--ac) 0%, transparent 62%);opacity:.13}
 
 /* 타워: 정육면체(T1) → 직육면체(T4). 티어 = 높이 */
 .tw{position:absolute;left:18%;right:18%;bottom:17%}
@@ -129,13 +131,14 @@ td.s{color:#9ab;width:36%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v4</h1>
-<div class="sub">타워 = 직육면체 · 아우라 · 건설 모드 · 길찾기 도로 · 6구역 전부</div>
+<h1>Defenkov 필드 · 형태 — v5</h1>
+<div class="sub">선명한 6색 · 은은한 아우라 · 직육면체 타워 · 건설 모드 · 길찾기 도로 · 6구역</div>
 
 <div class="q">
-  <b>v3에서 고친 것 —</b><br>
+  <b>v5에서 고친 것 — ① 6색을 선명하게(균등 명도 포기) ② 아우라 0.42 → 0.13</b><br>
+  <span style="color:#888">v4에서 고친 것:</span><br>
   ① 타워를 <b>정육면체 → 직육면체</b>로. 티어 = 높이 (어긋난 층은 받침판을 삐져나가는 버그였습니다)<br>
-  ② 타워·유닛에 <b>은은한 아우라</b> — 빛이 재료니까<br>
+  ② 타워·유닛에 <b>은은한 아우라</b> — 빛이 재료니까 (v5에서 0.42 → <b>0.13</b>으로 줄임)<br>
   ③ <b>건설 상태 / 평소 상태</b>를 분리 (미니 모터웨이 호버 방식)<br>
   ④ 길을 그리지 않고 <b>BFS 길찾기로 계산</b>해 도로로 렌더<br>
   ⑤ 유닛을 불규칙 다면체 → <b>구 + 아우라</b>로<br>
@@ -193,6 +196,16 @@ td.s{color:#9ab;width:36%}
 <h2>실제 크기 <span>화면 실측</span></h2>
 <div class="pad" id="p-real"><div class="row" id="reals"></div></div>
 
+<h2>팔레트 후보 <span>어느 쪽이 6색이 명확한가</span></h2>
+<div id="pals"></div>
+<div class="note">
+  <b>파스텔이 문제가 아니라 명도 사다리가 문제였습니다.</b> 6색을 균등한 밝기 계단에 맞추니
+  노랑이 베이지가 되고 파랑이 청록이 됐습니다. 선명한 색은 <b>본래 자기 밝기</b>가 있고,
+  그 자연 순서가 이미 사다리(<b>흰-노-초-빨-파-검</b>)와 같습니다 — 노랑은 원래 밝고 파랑은 원래 어둡습니다.
+  <br>그래서 <b>균등 간격만 포기하고 순서는 유지</b>했습니다. 세 후보 모두 순서가 지켜집니다.
+  현재 화면은 <b>A</b>로 그렸습니다.
+</div>
+
 <h2>도출 근거</h2>
 <table id="tbl"></table>
 
@@ -208,10 +221,10 @@ var CW=100/COLS, CH=100/ROWS;
 /* ── 지형(저채도 22%) / 보드 밖 여백 / 라벨색 ── */
 var ZONES=[
  {k:"흰", d:"거리 0", zone:"#eeeeee", pad:"#e2e2e2", lb:"#555"},
- {k:"노", d:"거리 1", zone:"#ddd8c2", pad:"#d0cbb5", lb:"#4a4636"},
- {k:"초", d:"거리 2", zone:"#b4cba8", pad:"#a7bd9b", lb:"#3d4a38"},
- {k:"빨", d:"거리 3", zone:"#d3bcbc", pad:"#c5aeae", lb:"#4d3c3c"},
- {k:"파", d:"거리 4", zone:"#8fa8b4", pad:"#829aa6", lb:"#2f3c44"},
+ {k:"노", d:"거리 1", zone:"#c3bda2", pad:"#b4ac8e", lb:"#43402f"},
+ {k:"초", d:"거리 2", zone:"#abc3a2", pad:"#98b48e", lb:"#38452f"},
+ {k:"빨", d:"거리 3", zone:"#c3a3a2", pad:"#b4908e", lb:"#452f2f"},
+ {k:"파", d:"거리 4", zone:"#a2b3c3", pad:"#8ea1b4", lb:"#2f3b45"},
  {k:"검", d:"거리 5", zone:"#4a4a4a", pad:"#3e3e3e", lb:"#b8b8b8"}
 ];
 
@@ -301,7 +314,7 @@ function towerInner(col, lv){
     +'<div class="top"><div class="mouth"></div></div><div class="front"></div></div>';
 }
 function unitInner(col, sz){
-  return '<div class="aura" style="--ac:var('+col+');inset:'+(-sz*0.5)+'%"></div>'
+  return '<div class="aura" style="--ac:var('+col+');inset:'+(-sz*0.28)+'%"></div>'
     +'<div class="un" style="--uc:var('+col+');left:'+(50-sz/2)+'%;top:'+(50-sz/2)+'%;'
     +'width:'+sz+'%;height:'+(sz/TILT)+'%"></div>';
 }
@@ -352,7 +365,7 @@ function buildField(el, opt){
     }
   }
   h+='<div class="obj" style="left:'+(NEXUS[0]*CW)+'%;top:'+(NEXUS[1]*CH)+'%;width:'+CW+'%;height:'+CH+'%">'
-    +'<div class="aura" style="--ac:#000;opacity:.16"></div>'+nexusInner()+'</div>';
+    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()+'</div>';
   el.innerHTML=h;
 }
 
@@ -419,7 +432,7 @@ buildField(document.getElementById("f-build"), {build:true});
   p.style.setProperty("--pad",GREEN.pad); p.style.setProperty("--lbc",GREEN.lb);
   document.getElementById("nexus").innerHTML =
     '<div class="item"><div class="cellbox" style="--cell:88px">'
-    +'<div class="aura" style="--ac:#000;opacity:.16"></div>'+nexusInner()
+    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()
     +'</div><div class="lb">추출기 · 사출포트</div></div>';
 })();
 
@@ -432,8 +445,33 @@ buildField(document.getElementById("f-build"), {build:true});
   h+='<div class="item"><div class="cellbox" style="--cell:26px">'+towerInner("--o-r",4)+'</div><div class="lb">타워 T4</div></div>';
   h+='<div class="item"><div class="cellbox" style="--cell:26px">'+unitInner("--o-y",32)+'</div><div class="lb">유닛</div></div>';
   h+='<div class="item"><div class="cellbox" style="--cell:30px">'
-    +'<div class="aura" style="--ac:#000;opacity:.16"></div>'+nexusInner()+'</div><div class="lb">넥서스</div></div>';
+    +'<div class="aura" style="--ac:#000;opacity:.07"></div>'+nexusInner()+'</div><div class="lb">넥서스</div></div>';
   document.getElementById("reals").innerHTML=h;
+})();
+
+/* ── 팔레트 후보 비교 ── */
+(function(){
+  var SETS=[
+   ["현재 (파스텔 · 균등명도)", ["#f2f2f2","#e8dda5","#87d75f","#e38e8e","#2c85b1","#333333"], "노랑이 베이지, 파랑이 청록으로 보임"],
+   ["A 선명 (지금 적용)",       ["#f2f2f2","#edcb45","#59b238","#db4a43","#2875c3","#333333"], "6색이 명확. 사다리 순서 유지"],
+   ["B 살짝 절제",             ["#f2f2f2","#e2c75a","#61b143","#d4645e","#367abf","#333333"], "A보다 부드럽게"],
+   ["C 강하게",                ["#f7f7f7","#f6cf31","#50b62b","#e5372e","#1b6bc5","#2b2b2b"], "가장 또렷. 과할 수 있음"]
+  ];
+  var N=["흰","노","초","빨","파","검"], h="", i, j;
+  for(i=0;i<SETS.length;i++){
+    h+='<div style="margin-bottom:10px">';
+    h+='<div style="font-size:11px;font-weight:800;color:#ddd;margin-bottom:4px">'+SETS[i][0]
+      +'<span style="color:#888;font-weight:600;margin-left:7px">'+SETS[i][2]+'</span></div>';
+    h+='<div style="display:flex;gap:4px">';
+    for(j=0;j<6;j++){
+      h+='<div style="flex:1;border-radius:5px;overflow:hidden;background:#242424">'
+        +'<div style="height:38px;background:'+SETS[i][1][j]+'"></div>'
+        +'<div style="font-size:8.5px;color:#999;padding:3px 4px;font-family:ui-monospace,monospace;text-align:center">'
+        +N[j]+" "+SETS[i][1][j]+'</div></div>';
+    }
+    h+='</div></div>';
+  }
+  document.getElementById("pals").innerHTML=h;
 })();
 
 /* ── 근거 표 ── */
@@ -453,7 +491,9 @@ buildField(document.getElementById("f-build"), {build:true});
    ["넥서스","<b>사출포트</b>","본체에 달린 비상 포트"],
    ["필드","<b>구역은 색을 갖는다</b>","지형 = 그 구역 색 저채도 22%"],
    ["필드","<b>격자는 배치할 때만</b>","평소 5% → 건설 중 14%"],
-   ["필드","<b>경로는 계산된다</b>","BFS 길찾기 결과를 도로로 렌더"]
+   ["필드","<b>경로는 계산된다</b>","BFS 길찾기 결과를 도로로 렌더"],
+   ["색","<b>6색이 명확해야</b>","균등 명도 포기, 자연 명도 사용 (순서는 유지)"],
+   ["색","<b>빛이 재료</b>","아우라를 은은히 (v4의 0.42 → 0.13)"]
   ];
   var h='<tr><th>대상</th><th>근거</th><th>형태로</th></tr>',i;
   for(i=0;i<R.length;i++) h+='<tr><td><b>'+R[i][0]+'</b></td><td class="s">'+R[i][1]+'</td><td>'+R[i][2]+'</td></tr>';
