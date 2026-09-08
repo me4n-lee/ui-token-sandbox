@@ -17,7 +17,7 @@
 <meta charset="utf-8">
 <meta name="robots" content="noindex,nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Defenkov 필드 · 형태 v12</title>
+<title>Defenkov 필드 · 형태 v13</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
 :root{
@@ -27,7 +27,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#191919;color:#ddd;
-     padding:16px 12px 48px;line-height:1.5;-webkit-text-size-adjust:100%}
+     padding:16px 12px 48px;line-height:1.5;-webkit-text-size-adjust:100%;overflow-x:hidden}
 .wrap{max-width:1060px;margin:0 auto}
 h1{font-size:15px;font-weight:800;color:#fff;margin-bottom:2px}
 .sub{font-size:11px;color:#888;margin-bottom:14px}
@@ -80,10 +80,12 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
          background:var(--tc);border-radius:22%;
          box-shadow:0 0 0 1px var(--ring)}
 .tw .lay.top{box-shadow:0 0 0 1px var(--ring), inset 0 calc(var(--cell)*-0.03) 0 rgba(0,0,0,.14)}
-/* 앞면 — 85°·80°에서만 생긴다. 90°는 높이가 안 보이므로 없음 */
+/* ★기하 정정 — 피치 θ에서 박스는 윗면이 h·cos(θ)만큼 위로 밀려 그려지고 그 사이가 앞면이다.
+   윗면을 안 올리면 앞면이 판에 완전히 가려진다(v12 버그). */
+.tw .stack{position:absolute;inset:0;transform:translateY(calc(-1 * var(--fh)))}
 .tw .front{position:absolute;left:10%;right:10%;
            top:calc(90% - var(--fh));height:var(--fh);
-           background:var(--tc);filter:brightness(.76);
+           background:var(--tc);filter:brightness(.74);
            border-radius:0 0 22% 22%;box-shadow:0 0 0 1px var(--ring)}
 
 .un{position:absolute;border-radius:50%;background:var(--uc);
@@ -123,8 +125,8 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .ac .head{font-size:13px;font-weight:800;padding:10px 12px 9px;color:#fff}
 .ac .head i{font-style:normal;font-size:10px;color:#8fe0be;font-weight:700;margin-left:8px}
 .ac .body{display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto}
-.acrow{display:flex;gap:26px;align-items:center;justify-content:center;
-       padding:18px 10px 20px;background:var(--zone);flex-wrap:wrap}
+.acrow{display:flex;gap:20px;align-items:flex-end;justify-content:center;
+       padding:34px 10px 20px;background:var(--zone);flex-wrap:wrap}
 .acrow .tag{position:absolute;left:0;right:0;bottom:-16px;text-align:center;
             font-size:10px;font-weight:800;color:var(--lbc2)}
 .acw{position:relative;margin-bottom:18px}
@@ -148,11 +150,11 @@ td.s{color:#9ab;width:34%}
 <body>
 <div class="wrap">
 
-<h1>Defenkov 필드 · 형태 — v12</h1>
+<h1>Defenkov 필드 · 형태 — v13</h1>
 <div class="sub">90° 수직 탑뷰 · 깊이는 그림자로만 · 티어는 판 적층 · 평소/건설 두 상태</div>
 
 <div class="q">
-  <b>v12 — 각도 비교를 크게 (세로 배치 · 근접 뷰 96px)</b><br><span style="color:#888">v10: 건물 80% · 지형색 파스텔 · 외곽선</span><br>
+  <b>v13 — 앞면이 판에 가려지던 버그 수정 (윗면을 h·cosθ만큼 올림) · 티어 표현 중복 제거</b><br><span style="color:#888">v10: 건물 80% · 지형색 파스텔 · 외곽선</span><br>
   ① <b>70° → 90° 수직 탑뷰.</b> 애매한 각도를 버렸습니다. 깊이는 <b>그림자로만</b><br>
   ② 티어를 높이 대신 <b>판 적층</b>(어긋나게 쌓기)으로 — 90°에선 높이가 안 보이므로<br>
   ③ 평소: <b>3칸 간격 옅은 실선</b>만<br>
@@ -187,7 +189,9 @@ td.s{color:#9ab;width:34%}
   달라지는 건 <b>앞면(높이)</b>뿐입니다. 셀 40px 기준 앞면 두께:
   <br>90° <b>0px</b> · 85° T1 2.4px / T4 5.1px · 80° T1 4.9px / T4 <b>10.1px</b>
   <br>즉 <b>90°의 깔끔함을 거의 유지하면서 티어를 높이로 읽게</b> 만들 수 있습니다.
-  각 블록의 아래 줄은 <b>T1~T4 근접 뷰</b>(셀 96px)입니다 — 앞면이 티어에 따라 자라는 게 보입니다.
+  각 블록의 아래 줄은 <b>T1~T4 근접 뷰</b>(셀 84px)입니다.
+  <br><b>티어 표현은 각도마다 하나만 씁니다</b> — 90°는 판 적층, 85°·80°는 앞면 높이.
+  둘을 겹치면 층수가 두 번 표시되어 시끄럽습니다.
 </div>
 
 <h2>6구역 <span>지형만 그 구역 색</span></h2>
@@ -288,17 +292,27 @@ function road(path, casing){
 }
 
 /* pitch = 수평에서 내려다본 각(도). 90이면 앞면 없음. 앞면 = 물체 높이 x cos(pitch) */
+/* 티어 표현은 각도마다 하나만 쓴다 — 둘을 겹치면 층수가 두 번 표시된다.
+     90°  : 높이가 안 보이므로 판 적층
+     <90° : 앞면 높이 (h x cos θ) */
 function towerInner(col, lv, pitch){
   var pit = (pitch===undefined) ? 90 : pitch;
   var C = Math.cos(pit*Math.PI/180);
   var wh = 0.70 + 0.25*(lv-1);
-  var h='<div class="tw" style="--tc:var('+col+');--fh:calc(var(--cell)*'+(wh*C).toFixed(4)+')"><div class="glow"></div>';
-  if(C > 0.001) h+='<div class="front"></div>';
-  for(var i=0;i<lv;i++){
-    var d=(lv-1-i)*3;
-    h+='<div class="'+((i===lv-1)?"lay top":"lay")+'" style="transform:translate('+(-d*0.55)+'%,'+(-d)+'%)"></div>';
+  var flat = (C <= 0.001);
+  var h='<div class="tw" style="--tc:var('+col+');--fh:calc(var(--cell)*'+(flat?0:(wh*C)).toFixed(4)+')">'
+       +'<div class="glow"></div>';
+  if(!flat) h+='<div class="front"></div>';
+  h+='<div class="stack">';
+  if(flat){
+    for(var i=0;i<lv;i++){
+      var d=(lv-1-i)*3;
+      h+='<div class="'+((i===lv-1)?"lay top":"lay")+'" style="transform:translate('+(-d*0.55)+'%,'+(-d)+'%)"></div>';
+    }
+  } else {
+    h+='<div class="lay top"></div>';
   }
-  return h+'</div>';
+  return h+'</div></div>';
 }
 function unitInner(col, sz){
   return '<div class="un" style="--uc:var('+col+');left:'+(50-sz/2)+'%;top:'+(50-sz/2)+'%;'
@@ -385,10 +399,10 @@ document.getElementById("s-build").innerHTML = buildArena(GREEN, true);
   var h="", i, j;
   for(i=0;i<A.length;i++){
     h+='<div class="ac"><div class="head">'+A[i][0]+'°<i>'+A[i][1]+'</i></div>'
-      +'<div class="body">'+buildArena(GREEN,false,null,A[i][0])+'</div>'
+      +'<div class="body">'+buildArena(GREEN,false,"30px",A[i][0])+'</div>'
       +'<div class="acrow" style="--zone:'+GREEN.zone+';--ring:'+GREEN.ring+';--lbc2:'+GREEN.lb+'">';
     for(j=1;j<=4;j++)
-      h+='<div class="acw"><div class="cb" style="--cell:96px">'+towerInner("--o-g",j,A[i][0])
+      h+='<div class="acw"><div class="cb" style="--cell:84px">'+towerInner("--o-g",j,A[i][0])
         +'</div><div class="tag">T'+j+'</div></div>';
     h+='</div></div>';
   }
@@ -448,7 +462,7 @@ function card(inner, lb, cell){
    ["해치","<b>보드 밖</b>","회색 대각 해치 — 지을 수 없는 영역"],
    ["해치","<b>경로를 막는 칸</b>","붉은 대각 해치 (현재 6칸)"],
    ["도로","<b>길찾기 결과</b>","BFS 34칸 · 꺾임 7회. 그린 게 아니다"],
-   ["타워","<b>티어 = 판 적층</b>","90°에선 높이가 안 보이므로 어긋나게 쌓는다"],
+   ["타워","<b>티어 표현</b>","90° = 판 적층 / 85°·80° = 앞면 높이. 둘 중 하나만"],
    ["타워","<b>깡통</b>","실루엣은 정직한 라운드 사각. 조잡함은 이음선 하나"],
    ["타워","<b>셀의 80%</b>","격자 20px이면 건물 16px"],
    ["타워","<b>외곽선</b>","자기 색 타워가 자기 구역에 묻히는 것을 막는다 (반대 극점 색)"],
