@@ -1,9 +1,12 @@
 <!DOCTYPE html>
 <!--
-  Defenkov 필드 · 형태 — v8 (90° 탑뷰 전면 재작성)
+  Defenkov 필드 · 형태 — v15 (90° 탑뷰)
 
-  근거: 기획/01시스템/06형태언어.md · 05색테마.md · 00세계관/05용어사전.md §2.0
-  ⛔ 레거시 목업(_공유/ui-mockup·lobby-mockup)에서 아무것도 가져오지 않았다.
+  ⚠ 버전은 <title>·<h1>과 함께 세 곳이다. 고치면 세 곳 다 고친다.
+  ⚠ 값은 여기 없다 → tokens.js. 이 파일은 구조와 렌더만 갖는다.
+
+  근거: ../../기획/01시스템/06형태언어.md · 05색테마.md · 00세계관/05용어사전.md §2.0
+  ⛔ 레거시 목업(기획/_공유/ui-mockup·lobby-mockup)에서 아무것도 가져오지 않았다.
 
   v8에서 바뀐 것
    1. 70° → 90° 수직 탑뷰. 깊이는 그림자로만
@@ -20,11 +23,7 @@
 <title>Defenkov 필드 · 형태 v15</title>
 <link href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" rel="stylesheet">
 <style>
-:root{
-  /* 6색 — 용어사전 §2.0 확정 (자연 명도, 사다리 순서 유지) */
-  --o-w:#f2f2f2; --o-y:#edcb45; --o-g:#59b238; --o-r:#db4a43; --o-b:#2875c3; --o-k:#333333;
-  --cell:40px;
-}
+/* 색·셀·격자·아우라 값은 tokens.js가 :root에 주입한다. 여기엔 구조만 둔다. */
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Pretendard Variable',Pretendard,sans-serif;background:#191919;color:#ddd;
      padding:16px 12px 48px;line-height:1.5;-webkit-text-size-adjust:100%;overflow-x:hidden}
@@ -44,21 +43,24 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 
 /* 평소 격자 — 3칸마다 옅은 실선 */
 .g-idle{position:absolute;inset:0;
-  background-image:linear-gradient(to right, rgba(0,0,0,.055) 1px, transparent 1px),
-                   linear-gradient(to bottom, rgba(0,0,0,.055) 1px, transparent 1px);
+  background-image:linear-gradient(to right, var(--grid-idle) 1px, transparent 1px),
+                   linear-gradient(to bottom, var(--grid-idle) 1px, transparent 1px);
   background-size:calc(var(--cell)*3) calc(var(--cell)*3)}
 
 /* 건설 중 격자 — 셀 단위 실선 */
 .g-build{position:absolute;inset:0;
-  background-image:linear-gradient(to right, rgba(0,0,0,.14) 1px, transparent 1px),
-                   linear-gradient(to bottom, rgba(0,0,0,.14) 1px, transparent 1px);
+  background-image:linear-gradient(to right, var(--grid-build) 1px, transparent 1px),
+                   linear-gradient(to bottom, var(--grid-build) 1px, transparent 1px);
   background-size:var(--cell) var(--cell);
-  box-shadow:0 0 0 1px rgba(0,0,0,.18)}
+  box-shadow:0 0 0 1px var(--grid-ring)}
 
-/* 지을 수 없는 곳 = 반투명 + 블러 */
-.veil{position:absolute;background:rgba(255,255,255,.45);
-  -webkit-backdrop-filter:blur(3px);
-          backdrop-filter:blur(3px)}
+/* 지을 수 없는 곳 = 프로스트 글래스. 아래 지형색이 비쳐야 "같은 구역"으로 읽힌다.
+   가림 2종 (06형태언어 §3.5) — 보드 밖은 무채(--veil) / 경로를 막는 칸은 붉은(--veilbad).
+   둘 다 구역 테마에서 오므로 검 구역에선 어둡게 덮인다. */
+.veil{position:absolute;background:var(--veil);
+  -webkit-backdrop-filter:blur(var(--veil-blur));
+          backdrop-filter:blur(var(--veil-blur))}
+.veil.bad{background:var(--veilbad)}
 
 /* 건설 중엔 화면이 옅어진다 */
 .dim{position:absolute;inset:0;background:var(--dim);pointer-events:none}
@@ -72,7 +74,7 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .tw{position:absolute;inset:0;
     filter:drop-shadow(calc(var(--cell)*0.08) calc(var(--cell)*0.10) calc(var(--cell)*0.07) rgba(0,0,0,.24))}
 .tw .glow{position:absolute;left:9%;right:9%;top:9%;bottom:9%;border-radius:24%;
-          box-shadow:0 0 calc(var(--cell)*0.16) var(--tc);opacity:.42}
+          box-shadow:0 0 calc(var(--cell)*var(--aura-blur)) var(--tc);opacity:var(--aura-glow)}
 /* 셀의 80%를 채운다 — 격자 20px이면 건물 16px.
    외곽선(--ring)은 자기 색 타워가 자기 구역 지형에 묻히는 것을 막는다(06형태언어.md §1.1) */
 .tw .lay{position:absolute;left:10%;right:10%;top:10%;bottom:10%;
@@ -84,7 +86,7 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 
 .un{position:absolute;border-radius:50%;background:var(--uc);
     box-shadow:0 0 0 1px var(--ring),
-               0 0 calc(var(--cell)*0.16) var(--uc),
+               0 0 calc(var(--cell)*var(--aura-blur)) var(--uc),
                calc(var(--cell)*0.05) calc(var(--cell)*0.07) calc(var(--cell)*0.05) rgba(0,0,0,.22),
                inset -2px -2px 4px rgba(0,0,0,.15),
                inset 2px 2px 3px rgba(255,255,255,.30)}
@@ -100,8 +102,6 @@ h2 span{color:#666;font-weight:600;letter-spacing:0;margin-left:6px}
 .nx .g2{left:45%;width:10%;bottom:-13%;height:22%}
 .nx .g3{top:45%;height:10%;left:-13%;width:22%}
 .nx .g4{top:45%;height:10%;right:-13%;width:22%}
-.nx .port{position:absolute;right:-14%;top:58%;width:24%;height:17%;
-          background:var(--o-w);border-radius:2px}
 
 .ghost{opacity:.6}
 .badmark{position:absolute;inset:14%;border:2px solid rgba(200,55,55,.9);border-radius:20%}
@@ -125,9 +125,9 @@ table{width:100%;border-collapse:collapse;font-size:11px;margin-top:6px}
 td,th{padding:6px 7px;border-bottom:1px solid #2c2c2c;text-align:left;vertical-align:top}
 th{color:#8fe0be;font-size:10px;letter-spacing:.06em}
 td.s{color:#9ab;width:34%}
-@media (max-width:1000px){ :root{--cell:26px} }
-@media (max-width:560px){ :root{--cell:17px} .stage{padding:8px} }
+@media (max-width:560px){ .stage{padding:8px} }
 </style>
+<script src="tokens.js"></script>
 </head>
 <body>
 <div class="wrap">
@@ -286,7 +286,7 @@ function unitInner(col, sz){
 function nexusInner(){
   return '<div class="nx"><div class="pad2"></div>'
     +'<div class="leg g1"></div><div class="leg g2"></div><div class="leg g3"></div><div class="leg g4"></div>'
-    +'<div class="ring"></div><div class="ring2"></div><div class="bore"></div><div class="port"></div></div>';
+    +'<div class="ring"></div><div class="ring2"></div><div class="bore"></div></div>';
 }
 
 function buildArena(z, build, cellOverride){
@@ -310,7 +310,7 @@ function buildArena(z, build, cellOverride){
   if(build){
     var bc=blockingCells();
     for(i=0;i<bc.length;i++)
-      h+='<div class="veil" style="left:'+px(bc[i][0])+';top:'+px(bc[i][1])+';'
+      h+='<div class="veil bad" style="left:'+px(bc[i][0])+';top:'+px(bc[i][1])+';'
         +'width:'+px(1)+';height:'+px(1)+'"></div>';
   }
 
@@ -341,21 +341,19 @@ function buildArena(z, build, cellOverride){
   return h+'</div>';
 }
 
-/* 지형 = 타워색의 파스텔판. 채도를 죽이면(구 22%) 넷이 다 흙빛으로 수렴해 괴리감이 생긴다.
-   채도는 52%로 유지하고 밝기만 84%로 올린다. ring = 반대 극점 외곽선 */
-var L={ring:"rgba(0,0,0,.20)", veil:"rgba(255,255,255,.52)",
-        veilbad:"rgba(198,66,66,.26)", dim:"rgba(255,255,255,.26)"};
-var D={ring:"rgba(255,255,255,.26)", veil:"rgba(20,20,20,.42)",
-        veilbad:"rgba(210,80,80,.30)", dim:"rgba(20,20,20,.22)"};
-function Z(k,d,zone,lb,t){ return {k:k,d:d,zone:zone,lb:lb,
-  ring:t.ring, veil:t.veil, veilbad:t.veilbad, dim:t.dim}; }
+/* 지형색·라벨·베일은 전부 tokens.js에서 온다 (05색테마 §1.2).
+   검 구역만 어두운 베일을 쓴다 — 밝은 가림을 그대로 쓰면 검 구역에서 하얗게 뜬다. */
+var L=TOKENS.veil.light, D=TOKENS.veil.dark;
+function Z(key,label,dist,t){ return {k:label, d:dist,
+  zone:terrainOf(key), lb:TOKENS.label[key],
+  ring:t.ring, veil:t.out, veilbad:t.bad, dim:t.dim}; }
 var ZONES=[
- Z("흰","거리 0","#ebebeb","#555",   L),
- Z("노","거리 1","#ebe3c1","#4a4330",L),
- Z("초","거리 2","#ccebc1","#38492f",L),
- Z("빨","거리 3","#ebc3c1","#4a2f2f",L),
- Z("파","거리 4","#c1d6eb","#2f3d4a",L),
- Z("검","거리 5","#4d4d4d","#c0c0c0",D)
+ Z("w","흰","거리 0",L),
+ Z("y","노","거리 1",L),
+ Z("g","초","거리 2",L),
+ Z("r","빨","거리 3",L),
+ Z("b","파","거리 4",L),
+ Z("k","검","거리 5",D)
 ];
 var GREEN=ZONES[2];
 
@@ -393,7 +391,7 @@ function card(inner, lb, cell){
 (function(){
   var p=document.getElementById("p-nx");
   p.style.setProperty("--zone",GREEN.zone); p.style.setProperty("--lbc",GREEN.lb); p.style.setProperty("--ring",GREEN.ring);
-  document.getElementById("nexus").innerHTML = card(nexusInner(), "추출기 · 사출포트", "92px");
+  document.getElementById("nexus").innerHTML = card(nexusInner(), "추출기", "92px");
 })();
 (function(){
   var p=document.getElementById("p-real");
@@ -420,10 +418,10 @@ function card(inner, lb, cell){
    ["타워","<b>깡통</b>","실루엣은 정직한 라운드 사각. 조잡함은 이음선 하나"],
    ["타워","<b>셀의 80%</b>","격자 20px이면 건물 16px"],
    ["타워","<b>외곽선</b>","자기 색 타워가 자기 구역에 묻히는 것을 막는다 (반대 극점 색)"],
-   ["지형","<b>타워색의 파스텔판</b>","채도 52% 유지 + 밝기 84%. 채도를 죽이면 흙빛으로 수렴한다"],
+   ["지형","<b>그 색의 파스텔판</b>","채도 유지 + 밝기만 올림. 채도를 죽이면 흙빛으로 수렴한다 (값=tokens.js)"],
    ["타워","<b>빛이 재료</b>","은은한 글로우"],
    ["유닛","<b>방금 뭉쳐진 빛</b>","구 + 글로우 + 내부 하이라이트. 눈 없음"],
-   ["넥서스","<b>무기가 아니다</b>","포신·총구 없음. 동심원 + 앵커 + 사출포트"],
+   ["넥서스","<b>무기가 아니다</b>","포신·총구·조준 요소 없음. 동심원 + 앵커만"],
    ["넥서스","<b>유산 계열</b>","완벽 대칭. 흰 받침판은 넥서스에만"],
    ["색","<b>6색 A톤 확정</b>","자연 명도, 사다리 순서 유지 (용어사전 §2.0)"]
   ];
